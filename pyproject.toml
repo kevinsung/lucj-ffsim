@@ -1,0 +1,13 @@
+[build-system]
+requires = ["flit_core"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "lucj_ffsim"
+description = "Simulations of LUCJ using ffsim"
+version = "0.0.0"
+requires-python = ">=3.8"
+dependencies = ["ffsim"]
+
+[project.optional-dependencies]
+dev = ["black[jupyter]", "mypy", "pylint", "pytest"]
