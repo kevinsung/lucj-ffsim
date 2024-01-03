@@ -73,6 +73,7 @@ def run_lucj_task(task: LUCJTask):
             n_reps=task.n_reps,
             alpha_alpha_indices=alpha_alpha_indices,
             alpha_beta_indices=alpha_beta_indices,
+            with_final_orbital_rotation=task.with_final_orbital_rotation,
         )
         # Compute energy
         final_state = ffsim.apply_unitary(
@@ -87,13 +88,18 @@ def run_lucj_task(task: LUCJTask):
             n_reps=task.n_reps,
             alpha_alpha_indices=alpha_alpha_indices,
             alpha_beta_indices=alpha_beta_indices,
+            with_final_orbital_rotation=task.with_final_orbital_rotation,
         )
         return ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
 
     # generate initial parameters
     if task.param_initialization == "ccsd":
         params = ffsim.UCJOperator.from_t_amplitudes(
-            mol_data.ccsd_t2, n_reps=task.n_reps
+            mol_data.ccsd_t2,
+            n_reps=task.n_reps,
+            t1_amplitudes=mol_data.ccsd_t1
+            if task.with_final_orbital_rotation
+            else None,
         ).to_parameters(
             alpha_alpha_indices=alpha_alpha_indices,
             alpha_beta_indices=alpha_beta_indices,
@@ -152,13 +158,17 @@ def main():
 
     bond_distance_range = np.linspace(1.3, 4.0, 6)
     connectivities = ["all-to-all", "square"]
-    n_reps_range = [2, 4]
+    n_reps_range = [2, 4, 6]
+    with_final_orbital_rotation_choices = [False, True]
     optimization_methods = ["L-BFGS-B", "linear-method"]
     ansatz_settings = [
         # connectivity, n_reps, with_final_orbital_rotation, param_initialization, optimization_method
-        (connectivity, n_reps, False, "ccsd", optimization_method)
-        for connectivity, n_reps, optimization_method in itertools.product(
-            connectivities, n_reps_range, optimization_methods
+        (connectivity, n_reps, with_final_orbital_rotation, "ccsd", optimization_method)
+        for connectivity, n_reps, with_final_orbital_rotation, optimization_method in itertools.product(
+            connectivities,
+            n_reps_range,
+            with_final_orbital_rotation_choices,
+            optimization_methods,
         )
     ]
 
@@ -180,7 +190,7 @@ def main():
                     param_initialization=param_initialization,
                     optimization_method=optimization_method,
                 )
-                executor.submit(run_lucj_task, task).result()
+                executor.submit(run_lucj_task, task)
 
 
 if __name__ == "__main__":
