@@ -236,8 +236,8 @@ def main():
     molecule_basename = f"ethene_dissociation_{basis}_{ne}e{norb}o"
 
     bond_distance_range = np.linspace(1.3, 4.0, 6)
-    connectivities = ["square"]
-    n_reps_range = [2]
+    connectivities = ["all-to-all", "square", "hex", "heavy-hex"]
+    n_reps_range = [2, 4, 6]
     with_final_orbital_rotation_choices = [False]
     param_initialization_methods = ["ccsd"]
     optimization_methods = ["L-BFGS-B", "linear-method"]
