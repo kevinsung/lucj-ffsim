@@ -10,4 +10,13 @@ requires-python = ">=3.8"
 dependencies = ["ffsim==0.0.18"]
 
 [project.optional-dependencies]
-dev = ["black[jupyter]", "mypy", "pylint", "pytest", "pandas", "matplotlib"]
+dev = [
+    "black[jupyter]",
+    "matplotlib",
+    "mypy",
+    "pylint",
+    "pytest",
+    "pandas",
+    "pre-commit",
+    "ruff",
+]
