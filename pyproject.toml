@@ -7,7 +7,7 @@ name = "lucj_ffsim"
 description = "Simulations of LUCJ using ffsim"
 version = "0.0.0"
 requires-python = ">=3.8"
-dependencies = ["ffsim@git+https://github.com/qiskit-community/ffsim"]
+dependencies = ["ffsim"]
 
 [project.optional-dependencies]
 dev = ["black[jupyter]", "mypy", "pylint", "pytest", "pandas", "matplotlib"]
