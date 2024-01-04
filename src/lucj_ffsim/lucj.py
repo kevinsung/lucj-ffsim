@@ -61,7 +61,11 @@ def run_lucj_task(task: LUCJTask):
         alpha_alpha_indices = [(p, p + 1) for p in range(norb - 1)]
         alpha_beta_indices = [(p, p) for p in range(norb)]
     elif task.connectivity == "hex":
-        raise NotImplementedError
+        alpha_alpha_indices = [(p, p + 1) for p in range(norb - 1)]
+        alpha_beta_indices = [(p, p) for p in range(norb) if p % 2 == 0]
+    elif task.connectivity == "heavy-hex":
+        alpha_alpha_indices = [(p, p + 1) for p in range(norb - 1)]
+        alpha_beta_indices = [(p, p) for p in range(norb) if p % 4 == 0]
     else:
         raise ValueError(f"Invalid connectivity: {task.connectivity}")
 
