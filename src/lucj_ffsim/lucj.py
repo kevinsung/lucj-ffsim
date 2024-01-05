@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import itertools
+import logging
 import math
 import os
 import pickle
 import timeit
+from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
 
@@ -12,6 +14,12 @@ import ffsim
 import numpy as np
 import scipy.optimize
 from pyscf.fci import spin_square
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S %z",
+)
 
 MOL_DATA_DIR = "data/molecular_data"
 DATA_DIR = "data/lucj"
@@ -60,12 +68,17 @@ def _get_lucj_indices(
 
 
 def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
-    print(f"{task} Starting...\n")
+    logging.info(f"{task} Starting...\n")
     os.makedirs(os.path.join(DATA_DIR, task.dirname), exist_ok=True)
 
     result_filename = os.path.join(DATA_DIR, task.dirname, "result.pickle")
-    if (not overwrite) and os.path.exists(result_filename):
-        print(f"{result_filename} already exists. Skipping...\n")
+    info_filename = os.path.join(DATA_DIR, task.dirname, "info.pickle")
+    if (
+        (not overwrite)
+        and os.path.exists(result_filename)
+        and os.path.exists(info_filename)
+    ):
+        logging.info(f"Data for {task} already exists. Skipping...\n")
         return task
 
     # Get molecular data and molecular Hamiltonian (one- and two-body tensors)
@@ -127,7 +140,8 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
         )
 
     # optimize ansatz
-    print(f"{task} Optimizing ansatz...\n")
+    logging.info(f"{task} Optimizing ansatz...\n")
+    info = defaultdict(list)
     t0 = timeit.default_timer()
     if task.optimization_method == "L-BFGS-B":
         result = scipy.optimize.minimize(
@@ -140,11 +154,19 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
             ),
         )
     elif task.optimization_method == "linear-method":
+
+        def callback(intermediate_result: scipy.optimize.OptimizeResult):
+            info["x"].append(intermediate_result.x)
+            info["fun"].append(intermediate_result.fun)
+            if hasattr(intermediate_result, "jac"):
+                info["jac"].append(intermediate_result.jac)
+            if hasattr(intermediate_result, "regularization"):
+                info["regularization"].append(intermediate_result.regularization)
+            if hasattr(intermediate_result, "variation"):
+                info["variation"].append(intermediate_result.variation)
+
         result = ffsim.optimize.minimize_linear_method(
-            params_to_vec,
-            hamiltonian,
-            x0=params,
-            maxiter=100000,
+            params_to_vec, hamiltonian, x0=params, maxiter=100000, callback=callback
         )
     elif task.optimization_method == "basinhopping":
         result = scipy.optimize.basinhopping(
@@ -161,10 +183,13 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
     else:
         raise NotImplementedError
     t1 = timeit.default_timer()
-    print(f"{task} Done in {t1 - t0} seconds.\n")
+    logging.info(f"{task} Done in {t1 - t0} seconds.\n")
 
     with open(result_filename, "wb") as f:
         pickle.dump(result, f)
+
+    with open(info_filename, "wb") as f:
+        pickle.dump(info, f)
 
     return task
 
@@ -174,12 +199,12 @@ def process_result(future: Future, overwrite: bool = True):
 
     out_filename = os.path.join(DATA_DIR, task.dirname, "data.pickle")
     if (not overwrite) and os.path.exists(out_filename):
-        print(f"{out_filename} already exists. Skipping...\n")
+        logging.info(f"{out_filename} already exists. Skipping...\n")
         return
 
     result_filename = os.path.join(DATA_DIR, task.dirname, "result.pickle")
     if not os.path.exists(result_filename):
-        print(f"{result_filename} does not exist. Skipping...\n")
+        logging.info(f"{result_filename} does not exist. Skipping...\n")
         return
     with open(result_filename, "rb") as f:
         result = pickle.load(f)
