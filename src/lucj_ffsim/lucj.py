@@ -144,6 +144,11 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
     info = defaultdict(list)
     t0 = timeit.default_timer()
     if task.optimization_method == "L-BFGS-B":
+
+        def callback(intermediate_result: scipy.optimize.OptimizeResult):
+            info["x"].append(intermediate_result.x)
+            info["fun"].append(intermediate_result.fun)
+
         result = scipy.optimize.minimize(
             fun,
             x0=params,
@@ -152,6 +157,7 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
                 maxiter=100000,
                 # eps=1e-12
             ),
+            callback=callback,
         )
     elif task.optimization_method == "linear-method":
 
@@ -166,7 +172,11 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
                 info["variation"].append(intermediate_result.variation)
 
         result = ffsim.optimize.minimize_linear_method(
-            params_to_vec, hamiltonian, x0=params, maxiter=100000, callback=callback
+            params_to_vec,
+            hamiltonian,
+            x0=params,
+            maxiter=100000,
+            callback=callback,
         )
     elif task.optimization_method == "basinhopping":
         result = scipy.optimize.basinhopping(
@@ -261,13 +271,22 @@ def main():
     basis = "sto-6g"
     ne, norb = 4, 4
     molecule_basename = f"ethene_dissociation_{basis}_{ne}e{norb}o"
+    overwrite = False
 
     bond_distance_range = np.linspace(1.3, 4.0, 6)
-    connectivities = ["all-to-all", "square", "hex", "heavy-hex"]
+    connectivities = [
+        "all-to-all",
+        "square",
+        "hex",
+        "heavy-hex",
+    ]
     n_reps_range = [2, 4, 6]
     with_final_orbital_rotation_choices = [False]
     param_initialization_methods = ["ccsd"]
-    optimization_methods = ["L-BFGS-B", "linear-method"]
+    optimization_methods = [
+        "L-BFGS-B",
+        "linear-method",
+    ]
 
     tasks = [
         LUCJTask(
@@ -290,7 +309,7 @@ def main():
 
     with ProcessPoolExecutor(MAX_PROCESSES) as executor:
         for task in tasks:
-            future = executor.submit(run_lucj_task, task, overwrite=False)
+            future = executor.submit(run_lucj_task, task, overwrite=overwrite)
             future.add_done_callback(process_result)
 
 
