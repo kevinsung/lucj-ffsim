@@ -32,9 +32,8 @@ class LUCJTask:
     connectivity: str  # options: all-to-all, square, hex, heavy-hex
     n_reps: int
     with_final_orbital_rotation: bool
+    param_initialization: str  # options: ccsd, bootstrap
     optimization_method: str
-    maxiter: int
-    bootstrap_task: LUCJTask | None
 
     @property
     def dirname(self) -> str:
@@ -43,8 +42,8 @@ class LUCJTask:
             f"{self.connectivity}",
             f"n_reps-{self.n_reps}",
             f"with_final_orbital_rotation-{self.with_final_orbital_rotation}",
+            f"param_initialization-{self.param_initialization}",
             f"optimization_method-{self.optimization_method}",
-            f"maxiter-{self.maxiter}",
         )
 
 
@@ -122,8 +121,7 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
         return ffsim.apply_unitary(reference_state, operator, norb=norb, nelec=nelec)
 
     # generate initial parameters
-    if task.bootstrap_task is None:
-        # use CCSD to initialize parameters
+    if task.param_initialization == "ccsd":
         params = ffsim.UCJOperator.from_t_amplitudes(
             mol_data.ccsd_t2,
             n_reps=task.n_reps,
@@ -134,13 +132,12 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
             alpha_alpha_indices=alpha_alpha_indices,
             alpha_beta_indices=alpha_beta_indices,
         )
+    elif task.param_initialization == "bootstrap":
+        raise NotImplementedError
     else:
-        bootstrap_result_filename = os.path.join(
-            DATA_DIR, task.bootstrap_task.dirname, "result.pickle"
+        raise ValueError(
+            f"Invalid parameter initialization strategy: {task.param_initialization}"
         )
-        with open(bootstrap_result_filename, "rb") as f:
-            result = pickle.load(f)
-            params = result.x
 
     # optimize ansatz
     logging.info(f"{task} Optimizing ansatz...\n")
@@ -157,7 +154,7 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
             x0=params,
             method="L-BFGS-B",
             options=dict(
-                maxiter=task.maxiter,
+                maxiter=100000,
                 # eps=1e-12
             ),
             callback=callback,
@@ -167,10 +164,6 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
         def callback(intermediate_result: scipy.optimize.OptimizeResult):
             info["x"].append(intermediate_result.x)
             info["fun"].append(intermediate_result.fun)
-            if hasattr(intermediate_result, "energy_mat"):
-                info["energy_mat"].append(intermediate_result.energy_mat)
-            if hasattr(intermediate_result, "overlap_mat"):
-                info["overlap_mat"].append(intermediate_result.overlap_mat)
             if hasattr(intermediate_result, "jac"):
                 info["jac"].append(intermediate_result.jac)
             if hasattr(intermediate_result, "regularization"):
@@ -182,7 +175,7 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
             params_to_vec,
             hamiltonian,
             x0=params,
-            maxiter=task.maxiter,
+            maxiter=100000,
             callback=callback,
         )
     elif task.optimization_method == "basinhopping":
@@ -211,11 +204,8 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
     return task
 
 
-def process_result(future: Future | LUCJTask, overwrite: bool = True):
-    if isinstance(future, Future):
-        task: LUCJTask = future.result()
-    else:
-        task: LUCJTask = future
+def process_result(future: Future, overwrite: bool = True):
+    task: LUCJTask = future.result()
 
     out_filename = os.path.join(DATA_DIR, task.dirname, "data.pickle")
     if (not overwrite) and os.path.exists(out_filename):
@@ -277,47 +267,7 @@ def process_result(future: Future | LUCJTask, overwrite: bool = True):
         pickle.dump(data, f)
 
 
-def run_bootstrap_tasks(
-    molecule_basename: str,
-    bond_distance_range: np.ndarray,
-    connectivity: str,
-    n_reps: int,
-    with_final_orbital_rotation: bool,
-    optimization_method: str,
-    maxiter: int,
-    overwrite: bool,
-):
-    tasks = [
-        LUCJTask(
-            molecule_basename=f"{molecule_basename}_bond_distance_{bond_distance_range[0]:.5f}",
-            connectivity=connectivity,
-            n_reps=n_reps,
-            with_final_orbital_rotation=with_final_orbital_rotation,
-            bootstrap_task=None,
-            optimization_method=optimization_method,
-            maxiter=maxiter,
-        )
-    ]
-    for i in range(1, len(bond_distance_range)):
-        bootstrap_task = tasks[-1]
-        bond_distance = bond_distance_range[i]
-        tasks.append(
-            LUCJTask(
-                molecule_basename=f"{molecule_basename}_bond_distance_{bond_distance:.5f}",
-                connectivity=connectivity,
-                n_reps=n_reps,
-                with_final_orbital_rotation=with_final_orbital_rotation,
-                bootstrap_task=bootstrap_task,
-                optimization_method=optimization_method,
-                maxiter=maxiter,
-            )
-        )
-    for task in tasks:
-        run_lucj_task(task, overwrite=overwrite)
-        process_result(task, overwrite=overwrite)
-
-
-def main_parallel():
+def main():
     basis = "sto-6g"
     ne, norb = 4, 4
     molecule_basename = f"ethene_dissociation_{basis}_{ne}e{norb}o"
@@ -351,13 +301,7 @@ def main_parallel():
             param_initialization=param_initialization,
             optimization_method=optimization_method,
         )
-        for (
-            connectivity,
-            n_reps,
-            with_final_orbital_rotation,
-            param_initialization,
-            optimization_method,
-        ) in itertools.product(
+        for connectivity, n_reps, with_final_orbital_rotation, param_initialization, optimization_method in itertools.product(
             connectivities,
             n_reps_range,
             with_final_orbital_rotation_choices,
@@ -371,56 +315,6 @@ def main_parallel():
         for task in tasks:
             future = executor.submit(run_lucj_task, task, overwrite=overwrite)
             future.add_done_callback(process_result)
-
-
-def main():
-    basis = "sto-6g"
-    ne, norb = 4, 4
-    molecule_basename = f"ethene_dissociation_{basis}_{ne}e{norb}o"
-    overwrite = True
-
-    bond_distance_range = np.linspace(1.3, 4.0, 20)
-    connectivities = [
-        "all-to-all",
-        "square",
-        "hex",
-        "heavy-hex",
-    ]
-    n_reps_range = [
-        2,
-        4,
-        6,
-    ]
-    with_final_orbital_rotation_choices = [False]
-    optimization_methods = [
-        "L-BFGS-B",
-        "linear-method",
-    ]
-    maxiter = 10000
-
-    with ProcessPoolExecutor(MAX_PROCESSES) as executor:
-        for (
-            connectivity,
-            n_reps,
-            with_final_orbital_rotation,
-            optimization_method,
-        ) in itertools.product(
-            connectivities,
-            n_reps_range,
-            with_final_orbital_rotation_choices,
-            optimization_methods,
-        ):
-            _ = executor.submit(
-                run_bootstrap_tasks,
-                molecule_basename=molecule_basename,
-                bond_distance_range=bond_distance_range,
-                connectivity=connectivity,
-                n_reps=n_reps,
-                with_final_orbital_rotation=with_final_orbital_rotation,
-                optimization_method=optimization_method,
-                maxiter=maxiter,
-                overwrite=overwrite,
-            )
 
 
 if __name__ == "__main__":
