@@ -1,29 +1,18 @@
 from __future__ import annotations
 
-import itertools
 import logging
 import math
 import os
 import pickle
 import timeit
 from collections import defaultdict
-from concurrent.futures import Future, ProcessPoolExecutor
+from concurrent.futures import Future
 from dataclasses import dataclass
 
 import ffsim
 import numpy as np
 import scipy.optimize
 from pyscf.fci import spin_square
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S %z",
-)
-
-MOL_DATA_DIR = "data/molecular_data"
-DATA_DIR = "data/lucj"
-MAX_PROCESSES = 44
 
 
 @dataclass(frozen=True)
@@ -68,12 +57,17 @@ def _get_lucj_indices(
     return alpha_alpha_indices, alpha_beta_indices
 
 
-def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
+def run_lucj_task(
+    task: LUCJTask,
+    data_dir: str,
+    mol_data_dir: str,
+    overwrite: bool = True,
+) -> LUCJTask:
     logging.info(f"{task} Starting...\n")
-    os.makedirs(os.path.join(DATA_DIR, task.dirname), exist_ok=True)
+    os.makedirs(os.path.join(data_dir, task.dirname), exist_ok=True)
 
-    result_filename = os.path.join(DATA_DIR, task.dirname, "result.pickle")
-    info_filename = os.path.join(DATA_DIR, task.dirname, "info.pickle")
+    result_filename = os.path.join(data_dir, task.dirname, "result.pickle")
+    info_filename = os.path.join(data_dir, task.dirname, "info.pickle")
     if (
         (not overwrite)
         and os.path.exists(result_filename)
@@ -83,7 +77,7 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
         return task
 
     # Get molecular data and molecular Hamiltonian (one- and two-body tensors)
-    molecule_filename = os.path.join(MOL_DATA_DIR, f"{task.molecule_basename}.pickle")
+    molecule_filename = os.path.join(mol_data_dir, f"{task.molecule_basename}.pickle")
     with open(molecule_filename, "rb") as f:
         mol_data: ffsim.MolecularData = pickle.load(f)
     norb = mol_data.norb
@@ -136,7 +130,7 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
         )
     else:
         bootstrap_result_filename = os.path.join(
-            DATA_DIR, task.bootstrap_task.dirname, "result.pickle"
+            data_dir, task.bootstrap_task.dirname, "result.pickle"
         )
         with open(bootstrap_result_filename, "rb") as f:
             result = pickle.load(f)
@@ -208,28 +202,37 @@ def run_lucj_task(task: LUCJTask, overwrite: bool = True) -> LUCJTask:
     with open(info_filename, "wb") as f:
         pickle.dump(info, f)
 
+    process_result(
+        task, data_dir=data_dir, mol_data_dir=mol_data_dir, overwrite=overwrite
+    )
+
     return task
 
 
-def process_result(future: Future | LUCJTask, overwrite: bool = True):
+def process_result(
+    future: Future | LUCJTask,
+    data_dir: str,
+    mol_data_dir: str,
+    overwrite: bool = True,
+):
     if isinstance(future, Future):
         task: LUCJTask = future.result()
     else:
         task: LUCJTask = future
 
-    out_filename = os.path.join(DATA_DIR, task.dirname, "data.pickle")
+    out_filename = os.path.join(data_dir, task.dirname, "data.pickle")
     if (not overwrite) and os.path.exists(out_filename):
         logging.info(f"{out_filename} already exists. Skipping...\n")
         return
 
-    result_filename = os.path.join(DATA_DIR, task.dirname, "result.pickle")
+    result_filename = os.path.join(data_dir, task.dirname, "result.pickle")
     if not os.path.exists(result_filename):
         logging.info(f"{result_filename} does not exist. Skipping...\n")
         return
     with open(result_filename, "rb") as f:
         result = pickle.load(f)
 
-    mol_filename = os.path.join(MOL_DATA_DIR, f"{task.molecule_basename}.pickle")
+    mol_filename = os.path.join(mol_data_dir, f"{task.molecule_basename}.pickle")
     with open(mol_filename, "rb") as f:
         mol_data: ffsim.MolecularData = pickle.load(f)
     norb = mol_data.norb
@@ -275,153 +278,3 @@ def process_result(future: Future | LUCJTask, overwrite: bool = True):
         data["nlinop"] = None
     with open(out_filename, "wb") as f:
         pickle.dump(data, f)
-
-
-def run_bootstrap_tasks(
-    molecule_basename: str,
-    bond_distance_range: np.ndarray,
-    connectivity: str,
-    n_reps: int,
-    with_final_orbital_rotation: bool,
-    optimization_method: str,
-    maxiter: int,
-    overwrite: bool,
-):
-    tasks = [
-        LUCJTask(
-            molecule_basename=f"{molecule_basename}_bond_distance_{bond_distance_range[0]:.5f}",
-            connectivity=connectivity,
-            n_reps=n_reps,
-            with_final_orbital_rotation=with_final_orbital_rotation,
-            bootstrap_task=None,
-            optimization_method=optimization_method,
-            maxiter=maxiter,
-        )
-    ]
-    for i in range(1, len(bond_distance_range)):
-        bootstrap_task = tasks[-1]
-        bond_distance = bond_distance_range[i]
-        tasks.append(
-            LUCJTask(
-                molecule_basename=f"{molecule_basename}_bond_distance_{bond_distance:.5f}",
-                connectivity=connectivity,
-                n_reps=n_reps,
-                with_final_orbital_rotation=with_final_orbital_rotation,
-                bootstrap_task=bootstrap_task,
-                optimization_method=optimization_method,
-                maxiter=maxiter,
-            )
-        )
-    for task in tasks:
-        run_lucj_task(task, overwrite=overwrite)
-        process_result(task, overwrite=overwrite)
-
-
-def main_parallel():
-    basis = "sto-6g"
-    ne, norb = 4, 4
-    molecule_basename = f"ethene_dissociation_{basis}_{ne}e{norb}o"
-    overwrite = True
-
-    bond_distance_range = np.linspace(1.3, 4.0, 20)
-    connectivities = [
-        # "all-to-all",
-        # "square",
-        # "hex",
-        "heavy-hex",
-    ]
-    n_reps_range = [
-        2,
-        # 4,
-        # 6,
-    ]
-    with_final_orbital_rotation_choices = [False]
-    param_initialization_methods = ["ccsd"]
-    optimization_methods = [
-        # "L-BFGS-B",
-        "linear-method",
-    ]
-
-    tasks = [
-        LUCJTask(
-            molecule_basename=f"{molecule_basename}_bond_distance_{bond_distance:.5f}",
-            connectivity=connectivity,
-            n_reps=n_reps,
-            with_final_orbital_rotation=with_final_orbital_rotation,
-            param_initialization=param_initialization,
-            optimization_method=optimization_method,
-        )
-        for (
-            connectivity,
-            n_reps,
-            with_final_orbital_rotation,
-            param_initialization,
-            optimization_method,
-        ) in itertools.product(
-            connectivities,
-            n_reps_range,
-            with_final_orbital_rotation_choices,
-            param_initialization_methods,
-            optimization_methods,
-        )
-        for bond_distance in bond_distance_range
-    ]
-
-    with ProcessPoolExecutor(MAX_PROCESSES) as executor:
-        for task in tasks:
-            future = executor.submit(run_lucj_task, task, overwrite=overwrite)
-            future.add_done_callback(process_result)
-
-
-def main():
-    basis = "sto-6g"
-    ne, norb = 4, 4
-    molecule_basename = f"ethene_dissociation_{basis}_{ne}e{norb}o"
-    overwrite = True
-
-    bond_distance_range = np.linspace(1.3, 4.0, 20)
-    connectivities = [
-        "all-to-all",
-        "square",
-        "hex",
-        "heavy-hex",
-    ]
-    n_reps_range = [
-        2,
-        4,
-        6,
-    ]
-    with_final_orbital_rotation_choices = [False]
-    optimization_methods = [
-        "L-BFGS-B",
-        "linear-method",
-    ]
-    maxiter = 10000
-
-    with ProcessPoolExecutor(MAX_PROCESSES) as executor:
-        for (
-            connectivity,
-            n_reps,
-            with_final_orbital_rotation,
-            optimization_method,
-        ) in itertools.product(
-            connectivities,
-            n_reps_range,
-            with_final_orbital_rotation_choices,
-            optimization_methods,
-        ):
-            _ = executor.submit(
-                run_bootstrap_tasks,
-                molecule_basename=molecule_basename,
-                bond_distance_range=bond_distance_range,
-                connectivity=connectivity,
-                n_reps=n_reps,
-                with_final_orbital_rotation=with_final_orbital_rotation,
-                optimization_method=optimization_method,
-                maxiter=maxiter,
-                overwrite=overwrite,
-            )
-
-
-if __name__ == "__main__":
-    main()

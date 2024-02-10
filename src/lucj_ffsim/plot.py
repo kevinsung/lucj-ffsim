@@ -1,163 +1,20 @@
-import itertools
 import os
-import pickle
 
-import ffsim
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from lucj_ffsim.lucj import LUCJTask
-
-MOL_DATA_DIR = "data/molecular_data"
-DATA_DIR = "data/lucj"
-PLOTS_DIR = "plots"
-os.makedirs(PLOTS_DIR, exist_ok=True)
 
 
-basis = "sto-6g"
-ne, norb = 4, 4
-molecule_basename = f"ethene_dissociation_{basis}_{ne}e{norb}o"
-
-reference_curves_bond_distance_range = np.linspace(1.3, 4.0, 50)
-# bond_distance_range = np.linspace(1.3, 4.0, 6)
-bond_distance_range = np.linspace(1.3, 4.0, 20)
-# bond_distance_range = np.linspace(1.3, 4.0, 50)
-connectivities = [
-    "all-to-all",
-    "square",
-    "hex",
-    "heavy-hex",
-]
-n_reps_range = [
-    2,
-    4,
-    6,
-]
-with_final_orbital_rotation_choices = [False]
-# param_initialization_methods = ["ccsd"]
-optimization_methods = [
-    "L-BFGS-B",
-    "linear-method",
-]
-maxiter = 10000
-
-ansatz_settings = list(
-    itertools.product(
-        connectivities,
-        n_reps_range,
-        with_final_orbital_rotation_choices,
-        # param_initialization_methods,
-        optimization_methods,
-    )
-)
-n_pts = len(bond_distance_range)
-
-mol_datas_reference: dict[float, ffsim.MolecularData] = {}
-mol_datas_experiment: dict[float, ffsim.MolecularData] = {}
-
-for bond_distance in reference_curves_bond_distance_range:
-    filename = os.path.join(
-        MOL_DATA_DIR, f"{molecule_basename}_bond_distance_{bond_distance:.5f}.pickle"
-    )
-    with open(filename, "rb") as f:
-        mol_data = pickle.load(f)
-        mol_datas_reference[bond_distance] = mol_data
-
-for bond_distance in bond_distance_range:
-    filename = os.path.join(
-        MOL_DATA_DIR, f"{molecule_basename}_bond_distance_{bond_distance:.5f}.pickle"
-    )
-    with open(filename, "rb") as f:
-        mol_data = pickle.load(f)
-        mol_datas_experiment[bond_distance] = mol_data
-
-hf_energies_reference = np.array(
-    [mol_data.hf_energy for mol_data in mol_datas_reference.values()]
-)
-fci_energies_reference = np.array(
-    [mol_data.fci_energy for mol_data in mol_datas_reference.values()]
-)
-hf_energies_experiment = np.array(
-    [mol_data.hf_energy for mol_data in mol_datas_experiment.values()]
-)
-fci_energies_experiment = np.array(
-    [mol_data.fci_energy for mol_data in mol_datas_experiment.values()]
-)
-
-data = {}
-infos = {}
-for (
-    connectivity,
-    n_reps,
-    with_final_orbital_rotation,
-    # param_initialization,
-    optimization_method,
-) in ansatz_settings:
-    for bond_distance in bond_distance_range:
-        task = LUCJTask(
-            molecule_basename=f"{molecule_basename}_bond_distance_{bond_distance:.5f}",
-            connectivity=connectivity,
-            n_reps=n_reps,
-            with_final_orbital_rotation=with_final_orbital_rotation,
-            # param_initialization=param_initialization,
-            optimization_method=optimization_method,
-            maxiter=maxiter,
-            bootstrap_task=None,
-        )
-        filename = os.path.join(DATA_DIR, task.dirname, "data.pickle")
-        with open(filename, "rb") as f:
-            data[
-                (
-                    bond_distance,
-                    connectivity,
-                    n_reps,
-                    with_final_orbital_rotation,
-                    # param_initialization,
-                    optimization_method,
-                )
-            ] = pickle.load(f)
-        filename = os.path.join(DATA_DIR, task.dirname, "info.pickle")
-        with open(filename, "rb") as f:
-            infos[
-                (
-                    bond_distance,
-                    connectivity,
-                    n_reps,
-                    with_final_orbital_rotation,
-                    # param_initialization,
-                    optimization_method,
-                )
-            ] = pickle.load(f)
-
-
-keys = ["energy", "error", "spin_squared", "nit", "nfev", "nlinop"]
-data = pd.DataFrame(
-    list(
-        zip(
-            data.keys(),
-            *zip(*[[d[k] for k in keys] for d in data.values()]),
-        )
-    ),
-    columns=["key"] + keys,
-)
-data.set_index(
-    pd.MultiIndex.from_tuples(
-        data["key"],
-        names=[
-            "bond_distance",
-            "connectivity",
-            "n_reps",
-            "with_final_orbital_rotation",
-            # "param_initialization",
-            "optimization_method",
-        ],
-    ),
-    inplace=True,
-)
-data.drop(columns="key", inplace=True)  # Drop the original 'Key' column
-
-
-def plot_optimization_iterations(connectivity: str, n_reps: int):
+def plot_optimization_iterations(
+    plots_dir: str,
+    data: pd.DataFrame,
+    molecule_basename: str,
+    bond_distance_range: np.ndarray,
+    n_pts: int,
+    optimization_methods: list[str],
+    connectivity: str,
+    n_reps: int,
+):
     # compare cost of optimization methods
     markers = ["o", "s", "v", "D", "p", "*"]
 
@@ -218,11 +75,23 @@ def plot_optimization_iterations(connectivity: str, n_reps: int):
     ax1.set_title(r"Ethene dissociation STO-6g (4e, 4o)" + f", {connectivity}")
 
     plt.show()
-    plt.savefig(f"{PLOTS_DIR}/{filename}.svg")
+    plt.savefig(f"{plots_dir}/{filename}.svg")
     plt.close()
 
 
-def plot_optimization_method(connectivity: str, n_reps: int):
+def plot_optimization_method(
+    plots_dir: str,
+    data: pd.DataFrame,
+    molecule_basename: str,
+    reference_curves_bond_distance_range: np.ndarray,
+    hf_energies_reference: np.ndarray,
+    fci_energies_reference: np.ndarray,
+    bond_distance_range: np.ndarray,
+    n_pts: int,
+    optimization_methods: list[str],
+    connectivity: str,
+    n_reps: int,
+):
     # effect of optimization method
     markers = ["o", "s", "v", "D", "p", "*"]
 
@@ -303,7 +172,7 @@ def plot_optimization_method(connectivity: str, n_reps: int):
     fig.suptitle(r"Ethene dissociation STO-6g (4e, 4o)" + f", {connectivity}")
 
     dirname = os.path.join(
-        PLOTS_DIR,
+        plots_dir,
         molecule_basename,
         f"npts-{n_pts}",
         connectivity,
@@ -312,19 +181,76 @@ def plot_optimization_method(connectivity: str, n_reps: int):
     filename = os.path.join(dirname, f"n_reps-{n_reps}.svg")
     plt.savefig(filename)
 
+    # dirname = os.path.join(
+    #     plots_dir,
+    #     molecule_basename,
+    #     f"npts-{n_pts}",
+    #     f"n_reps-{n_reps}",
+    # )
+    # os.makedirs(dirname, exist_ok=True)
+    # filename = os.path.join(dirname, f"{connectivity}.svg")
+    # plt.savefig(filename)
+    # plt.close()
+
+
+def plot_overlap_mats(
+    plots_dir: str,
+    infos: dict,
+    molecule_basename: str,
+    bond_distance_range: np.ndarray,
+    n_pts: int,
+    connectivity: str,
+    n_reps: int,
+):
+    n_mat = 5
+    bond_distances = bond_distance_range[::6]
+
+    fig, axes = plt.subplots(
+        len(bond_distances), n_mat, figsize=(6 * n_mat, 6 * len(bond_distances))
+    )
+
+    for these_axes, bond_distance in zip(axes, bond_distances):
+        info = infos[
+            bond_distance,
+            connectivity,
+            n_reps,
+            False,
+            "linear-method",
+        ]
+
+        overlap_mats = np.stack(info["overlap_mat"])
+        nit = len(overlap_mats)
+        step = nit // (n_mat - 1)
+        mats = list(overlap_mats[::step])
+        iteration_nums = list(range(0, nit, step))
+        assert len(mats) in (n_mat, n_mat - 1)
+        # if len(mats) == n_mat - 1:
+        #     mats.append(overlap_mats[-1])
+        #     iteration_nums.append(nit - 1)
+
+        for ax, mat, i in zip(these_axes, mats, iteration_nums):
+            max_val = np.max(np.abs(mat))
+            im = ax.matshow(
+                mat,
+                cmap="bwr",
+                vmin=-max_val,
+                vmax=max_val,
+            )
+            ax.set_title(f"Iteration {i}")
+            if i == 0:
+                ax.set_ylabel(f"d = {bond_distance}")
+            fig.colorbar(im)
+
+        fig.suptitle(
+            r"Ethene dissociation STO-6g (4e, 4o) overlap matrix" + f", L={n_reps}"
+        )
+
     dirname = os.path.join(
-        PLOTS_DIR,
+        plots_dir,
         molecule_basename,
         f"npts-{n_pts}",
-        f"n_reps-{n_reps}",
+        connectivity,
     )
     os.makedirs(dirname, exist_ok=True)
-    filename = os.path.join(dirname, f"{connectivity}.svg")
+    filename = os.path.join(dirname, f"overlap_mat_n_reps-{n_reps}.svg")
     plt.savefig(filename)
-    plt.close()
-
-
-if __name__ == "__main__":
-    for connectivity, n_reps in itertools.product(connectivities, n_reps_range):
-        # plot_optimization_iterations(connectivity=connectivity, n_reps=n_reps)
-        plot_optimization_method(connectivity=connectivity, n_reps=n_reps)

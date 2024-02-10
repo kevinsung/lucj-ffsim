@@ -6,7 +6,9 @@ import ffsim
 import numpy as np
 import pyscf
 
-DATA_DIR = "data/molecular_data"
+DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
+
+DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 BASIS = "sto-6g"
 NE, NORB = 4, 4
 BASE_NAME = f"ethene_dissociation_{BASIS}_{NE}e{NORB}o"
