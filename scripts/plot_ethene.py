@@ -6,7 +6,11 @@ import ffsim
 import numpy as np
 import pandas as pd
 from lucj_ffsim.lucj import LUCJTask
-from lucj_ffsim.plot import plot_optimization_method, plot_overlap_mats
+from lucj_ffsim.plot import (
+    plot_optimization_method,
+    plot_overlap_mats,
+    plot_reference_curves,
+)
 
 
 DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
@@ -72,6 +76,9 @@ hf_energies_reference = np.array(
 )
 fci_energies_reference = np.array(
     [mol_data.fci_energy for mol_data in mol_datas_reference.values()]
+)
+ccsd_energies_reference = np.array(
+    [mol_data.ccsd_energy for mol_data in mol_datas_reference.values()]
 )
 hf_energies_experiment = np.array(
     [mol_data.hf_energy for mol_data in mol_datas_experiment.values()]
@@ -154,8 +161,18 @@ data.drop(columns="key", inplace=True)  # Drop the original 'Key' column
 
 for connectivity, n_reps in itertools.product(connectivities, n_reps_range):
     # plot_optimization_iterations(connectivity=connectivity, n_reps=n_reps)
+    plot_reference_curves(
+        plots_dir=PLOTS_DIR,
+        title="Ethene dissociation STO-6g (4e, 4o)",
+        molecule_basename=molecule_basename,
+        reference_curves_bond_distance_range=reference_curves_bond_distance_range,
+        hf_energies_reference=hf_energies_reference,
+        ccsd_energies_reference=ccsd_energies_reference,
+        fci_energies_reference=fci_energies_reference,
+    )
     plot_optimization_method(
         plots_dir=PLOTS_DIR,
+        title="Ethene dissociation STO-6g (4e, 4o)" + f", {connectivity}",
         data=data,
         molecule_basename=molecule_basename,
         reference_curves_bond_distance_range=reference_curves_bond_distance_range,
@@ -169,6 +186,7 @@ for connectivity, n_reps in itertools.product(connectivities, n_reps_range):
     )
     plot_overlap_mats(
         plots_dir=PLOTS_DIR,
+        title="Ethene dissociation STO-6g (4e, 4o) overlap matrix" + f", L={n_reps}",
         infos=infos,
         molecule_basename=molecule_basename,
         bond_distance_range=bond_distance_range,

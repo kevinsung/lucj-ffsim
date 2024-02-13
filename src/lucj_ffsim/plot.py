@@ -79,8 +79,53 @@ def plot_optimization_iterations(
     plt.close()
 
 
+def plot_reference_curves(
+    plots_dir: str,
+    title: str,
+    molecule_basename: str,
+    reference_curves_bond_distance_range: np.ndarray,
+    hf_energies_reference: np.ndarray,
+    ccsd_energies_reference: np.ndarray,
+    fci_energies_reference: np.ndarray,
+):
+    fig, ax = plt.subplots()
+
+    ax.plot(
+        reference_curves_bond_distance_range,
+        hf_energies_reference,
+        "--",
+        label="HF",
+        color="blue",
+    )
+    ax.plot(
+        reference_curves_bond_distance_range,
+        ccsd_energies_reference,
+        "--",
+        label="CCSD",
+        color="orange",
+    )
+    ax.plot(
+        reference_curves_bond_distance_range,
+        fci_energies_reference,
+        "-",
+        label="FCI",
+        color="black",
+    )
+
+    ax.set_title(title)
+
+    dirname = os.path.join(
+        plots_dir,
+        molecule_basename,
+    )
+    os.makedirs(dirname, exist_ok=True)
+    filename = os.path.join(dirname, "reference_curves.svg")
+    plt.savefig(filename)
+
+
 def plot_optimization_method(
     plots_dir: str,
+    title: str,
     data: pd.DataFrame,
     molecule_basename: str,
     reference_curves_bond_distance_range: np.ndarray,
@@ -169,7 +214,7 @@ def plot_optimization_method(
     ax4.legend()
     ax4.set_ylabel("Number of iterations")
 
-    fig.suptitle(r"Ethene dissociation STO-6g (4e, 4o)" + f", {connectivity}")
+    fig.suptitle(title)
 
     dirname = os.path.join(
         plots_dir,
@@ -195,6 +240,7 @@ def plot_optimization_method(
 
 def plot_overlap_mats(
     plots_dir: str,
+    title: str,
     infos: dict,
     molecule_basename: str,
     bond_distance_range: np.ndarray,
@@ -241,9 +287,7 @@ def plot_overlap_mats(
                 ax.set_ylabel(f"d = {bond_distance}")
             fig.colorbar(im)
 
-        fig.suptitle(
-            r"Ethene dissociation STO-6g (4e, 4o) overlap matrix" + f", L={n_reps}"
-        )
+        fig.suptitle(title)
 
     dirname = os.path.join(
         plots_dir,

@@ -99,10 +99,19 @@ def run_lucj_task(
             with_final_orbital_rotation=task.with_final_orbital_rotation,
         )
         # Compute energy
+        logging.debug("Computing statevector...")
+        t0 = timeit.default_timer()
         final_state = ffsim.apply_unitary(
             reference_state, operator, norb=norb, nelec=nelec
         )
-        return np.vdot(final_state, hamiltonian @ final_state).real
+        t1 = timeit.default_timer()
+        logging.debug(f"Computing statevector done in {t1 - t0} seconds.")
+        logging.debug("Computing energy...")
+        t0 = timeit.default_timer()
+        energy = np.vdot(final_state, hamiltonian @ final_state).real
+        t1 = timeit.default_timer()
+        logging.debug(f"Computing energy done in {t1 - t0} seconds.")
+        return energy
 
     def params_to_vec(x: np.ndarray) -> np.ndarray:
         operator = ffsim.UCJOperator.from_parameters(
@@ -139,12 +148,14 @@ def run_lucj_task(
     # optimize ansatz
     logging.info(f"{task} Optimizing ansatz...\n")
     info = defaultdict(list)
+    info["nit"] = 0
     t0 = timeit.default_timer()
     if task.optimization_method == "L-BFGS-B":
 
         def callback(intermediate_result: scipy.optimize.OptimizeResult):
             info["x"].append(intermediate_result.x)
             info["fun"].append(intermediate_result.fun)
+            info["nit"] += 1
 
         result = scipy.optimize.minimize(
             fun,
@@ -159,18 +170,22 @@ def run_lucj_task(
     elif task.optimization_method == "linear-method":
 
         def callback(intermediate_result: scipy.optimize.OptimizeResult):
+            logging.info(f"Task {task} is on iteration {info['nit']}.")
             info["x"].append(intermediate_result.x)
             info["fun"].append(intermediate_result.fun)
-            if hasattr(intermediate_result, "energy_mat"):
-                info["energy_mat"].append(intermediate_result.energy_mat)
-            if hasattr(intermediate_result, "overlap_mat"):
-                info["overlap_mat"].append(intermediate_result.overlap_mat)
             if hasattr(intermediate_result, "jac"):
                 info["jac"].append(intermediate_result.jac)
             if hasattr(intermediate_result, "regularization"):
                 info["regularization"].append(intermediate_result.regularization)
             if hasattr(intermediate_result, "variation"):
                 info["variation"].append(intermediate_result.variation)
+            nit = info["nit"]
+            if nit < 100 or nit % 20 == 0:
+                if hasattr(intermediate_result, "energy_mat"):
+                    info["energy_mat"].append((nit, intermediate_result.energy_mat))
+                if hasattr(intermediate_result, "overlap_mat"):
+                    info["overlap_mat"].append((nit, intermediate_result.overlap_mat))
+            info["nit"] += 1
 
         result = ffsim.optimize.minimize_linear_method(
             params_to_vec,
@@ -186,7 +201,7 @@ def run_lucj_task(
             minimizer_kwargs=dict(
                 method="L-BFGS-B",
                 options=dict(
-                    maxiter=100000,
+                    maxiter=1000,
                     # eps=1e-12
                 ),
             ),
