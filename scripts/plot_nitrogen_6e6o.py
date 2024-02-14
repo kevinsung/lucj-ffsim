@@ -18,10 +18,11 @@ os.makedirs(PLOTS_DIR, exist_ok=True)
 
 
 basis = "sto-6g"
-ne, norb = 10, 8
+ne, norb = 6, 6
 molecule_basename = f"nitrogen_dissociation_{basis}_{ne}e{norb}o"
 
 reference_curves_d_range = np.arange(0.80, 3.01, 0.10)
+# reference_curves_d_range = np.arange(0.80, 1.11, 0.10)
 # bond_distance_range = np.linspace(1.3, 4.0, 20)
 connectivities = [
     "square",
@@ -52,7 +53,7 @@ mol_datas_reference: dict[float, ffsim.MolecularData] = {}
 mol_datas_experiment: dict[float, ffsim.MolecularData] = {}
 
 for d in reference_curves_d_range:
-    filename = os.path.join(MOL_DATA_DIR, f"{molecule_basename}_d_{d:.2f}.pickle")
+    filename = os.path.join(MOL_DATA_DIR, f"{molecule_basename}_d-{d:.2f}.pickle")
     with open(filename, "rb") as f:
         mol_data = pickle.load(f)
         mol_datas_reference[d] = mol_data
@@ -157,7 +158,7 @@ for connectivity, n_reps in itertools.product(connectivities, n_reps_range):
     # plot_optimization_iterations(connectivity=connectivity, n_reps=n_reps)
     plot_reference_curves(
         plots_dir=PLOTS_DIR,
-        title="Nitrogen dissociation STO-6g (10e, 8o)",
+        title="Nitrogen dissociation STO-6g (6e, 6o)",
         molecule_basename=molecule_basename,
         reference_curves_bond_distance_range=reference_curves_d_range,
         hf_energies_reference=hf_energies_reference,

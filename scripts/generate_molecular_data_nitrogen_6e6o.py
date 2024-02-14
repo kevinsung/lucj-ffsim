@@ -10,7 +10,7 @@ DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 BASIS = "sto-6g"
-NE, NORB = 10, 8
+NE, NORB = 6, 6
 BASE_NAME = f"nitrogen_dissociation_{BASIS}_{NE}e{NORB}o"
 
 
@@ -27,7 +27,7 @@ def find_twop_shell():
     mf_ATOM = scf.ROHF(ATOM)
     mf_ATOM = scf.newton(mf_ATOM)
     mf_ATOM.kernel()
-    DL = mf_ATOM.mo_coeff[:, [1, 2, 3, 4]]
+    DL = mf_ATOM.mo_coeff[:, [2, 3, 4]]
     return DL
 
 
@@ -70,7 +70,9 @@ t2 = None
 t1_as = None
 t2_as = None
 
-for j, d in enumerate(list(np.arange(0.80, 3.01, 0.10))):
+d_range = np.arange(0.80, 3.01, 0.10)
+# d_range = np.arange(0.80, 1.11, 0.10)
+for j, d in enumerate(d_range):
     filename = os.path.join(DATA_DIR, f"{BASE_NAME}_d-{d:.2f}.pickle")
 
     mol = gto.Mole()
@@ -110,18 +112,22 @@ for j, d in enumerate(list(np.arange(0.80, 3.01, 0.10))):
     t2 = np.einsum("ijab,pa,qb,sj,ri->prqs", mcc.t2, Cv, Cv, Co, Co, optimize=True)
 
     nao = mol.nao_nr()
-    D = np.zeros((nao, 8))
-    D[: nao // 2, :4] = C
-    D[nao // 2 :, 4:] = C
+    D = np.zeros((nao, 6))
+    D[: nao // 2, :3] = C
+    D[nao // 2 :, 3:] = C
 
     PROJ, IDX = get_projections(mf, get_MP2_natural_orbitals(mf), D)
     print("bondlength, projections ", d, PROJ[IDX], IDX)
 
-    norb = 8
-    nelec = 5, 5
+    norb = 6
+    nelec = 3, 3
     mycas = mcscf.CASCI(mf, norb, nelec)
     mycas.mo_coeff = get_MP2_natural_orbitals(mf)
-    mo = mycas.sort_mo(IDX, base=0)
+    # mycas.mo_coeff = mycas.sort_mo(IDX, base=0)
+    if d > 2.00:
+        mo = mycas.sort_mo(IDX, base=0)
+    else:
+        mo = None
     mycas.fix_spin_(ss=0)
     Ecas = mycas.kernel(mo)[0]
 

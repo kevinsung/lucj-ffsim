@@ -29,6 +29,7 @@ reference_curves_bond_distance_range = np.linspace(1.3, 4.0, 50)
 bond_distance_range = np.linspace(1.3, 4.0, 20)
 connectivities = [
     "square",
+    "all-to-all",
 ]
 n_reps_range = [
     2,

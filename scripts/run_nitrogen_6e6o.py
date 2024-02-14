@@ -20,14 +20,15 @@ DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 DATA_DIR = os.path.join(DATA_ROOT, "lucj")
-MAX_PROCESSES = 144
+MAX_PROCESSES = 1
 
 basis = "sto-6g"
-ne, norb = 4, 4
-molecule_basename = f"ethene_dissociation_{basis}_{ne}e{norb}o"
+ne, norb = 6, 6
+molecule_basename = f"nitrogen_dissociation_{basis}_{ne}e{norb}o"
 overwrite = True
 
-bond_distance_range = np.linspace(1.3, 4.0, 20)
+d_range = np.arange(0.80, 3.01, 0.10)
+
 connectivities = [
     "square",
     "all-to-all",
@@ -37,16 +38,16 @@ n_reps_range = [
     4,
     6,
 ]
-with_final_orbital_rotation_choices = [False]
 optimization_methods = [
     "L-BFGS-B",
     "linear-method",
 ]
-maxiter = 10000
+with_final_orbital_rotation_choices = [False]
+maxiter = 1000
 
 tasks = [
     LUCJTask(
-        molecule_basename=f"{molecule_basename}_bond_distance_{bond_distance:.5f}",
+        molecule_basename=f"{molecule_basename}_d-{d:.2f}",
         connectivity=connectivity,
         n_reps=n_reps,
         with_final_orbital_rotation=with_final_orbital_rotation,
@@ -57,15 +58,15 @@ tasks = [
     for (
         connectivity,
         n_reps,
-        with_final_orbital_rotation,
         optimization_method,
+        with_final_orbital_rotation,
     ) in itertools.product(
         connectivities,
         n_reps_range,
-        with_final_orbital_rotation_choices,
         optimization_methods,
+        with_final_orbital_rotation_choices,
     )
-    for bond_distance in bond_distance_range
+    for d in d_range
 ]
 
 with ProcessPoolExecutor(MAX_PROCESSES) as executor:
@@ -76,4 +77,4 @@ with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             data_dir=DATA_DIR,
             mol_data_dir=MOL_DATA_DIR,
             overwrite=overwrite,
-        )
+        ).result()

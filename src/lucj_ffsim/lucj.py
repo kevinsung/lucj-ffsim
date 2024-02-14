@@ -153,6 +153,7 @@ def run_lucj_task(
     if task.optimization_method == "L-BFGS-B":
 
         def callback(intermediate_result: scipy.optimize.OptimizeResult):
+            logging.info(f"Task {task} is on iteration {info['nit']}.")
             info["x"].append(intermediate_result.x)
             info["fun"].append(intermediate_result.fun)
             info["nit"] += 1
@@ -180,7 +181,7 @@ def run_lucj_task(
             if hasattr(intermediate_result, "variation"):
                 info["variation"].append(intermediate_result.variation)
             nit = info["nit"]
-            if nit < 100 or nit % 20 == 0:
+            if nit < 20 or nit % 50 == 0:
                 if hasattr(intermediate_result, "energy_mat"):
                     info["energy_mat"].append((nit, intermediate_result.energy_mat))
                 if hasattr(intermediate_result, "overlap_mat"):

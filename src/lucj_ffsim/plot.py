@@ -111,7 +111,7 @@ def plot_reference_curves(
         label="FCI",
         color="black",
     )
-
+    ax.legend()
     ax.set_title(title)
 
     dirname = os.path.join(
@@ -264,15 +264,16 @@ def plot_overlap_mats(
             "linear-method",
         ]
 
-        overlap_mats = np.stack(info["overlap_mat"])
+        iterations, overlap_mats = zip(*info["overlap_mat"])
         nit = len(overlap_mats)
         step = nit // (n_mat - 1)
-        mats = list(overlap_mats[::step])
-        iteration_nums = list(range(0, nit, step))
-        assert len(mats) in (n_mat, n_mat - 1)
-        # if len(mats) == n_mat - 1:
-        #     mats.append(overlap_mats[-1])
-        #     iteration_nums.append(nit - 1)
+        indices = list(range(0, nit, step))
+        while len(indices) > n_mat - 1:
+            indices.pop()
+        if nit - 1 not in indices:
+            indices.append(nit - 1)
+        mats = [overlap_mats[i] for i in indices]
+        iteration_nums = [iterations[i] for i in indices]
 
         for ax, mat, i in zip(these_axes, mats, iteration_nums):
             max_val = np.max(np.abs(mat))

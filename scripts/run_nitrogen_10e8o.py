@@ -13,7 +13,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S %z",
-    filename="logs/run_nitrogen.log",
+    filename=f"logs/{os.path.splitext(os.path.basename(__file__))[0]}.log",
 )
 
 DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
@@ -29,19 +29,19 @@ overwrite = True
 
 d_range = np.arange(0.80, 3.01, 0.10)
 connectivities = [
-    "all-to-all",
     "square",
+    "all-to-all",
 ]
 n_reps_range = [
     2,
     4,
     6,
 ]
-with_final_orbital_rotation_choices = [False]
 optimization_methods = [
     "L-BFGS-B",
     "linear-method",
 ]
+with_final_orbital_rotation_choices = [False]
 maxiter = 1000
 
 tasks = [
@@ -57,13 +57,13 @@ tasks = [
     for (
         connectivity,
         n_reps,
-        with_final_orbital_rotation,
         optimization_method,
+        with_final_orbital_rotation,
     ) in itertools.product(
         connectivities,
         n_reps_range,
-        with_final_orbital_rotation_choices,
         optimization_methods,
+        with_final_orbital_rotation_choices,
     )
     for d in d_range
 ]
