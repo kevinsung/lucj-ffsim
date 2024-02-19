@@ -13,13 +13,14 @@ import ffsim
 import numpy as np
 import scipy.optimize
 from pyscf.fci import spin_square
+from scipy.optimize import OptimizeResult
 
 
 @dataclass(frozen=True)
 class LUCJTask:
     molecule_basename: str
     connectivity: str  # options: all-to-all, square, hex, heavy-hex
-    n_reps: int
+    n_reps: int | None
     with_final_orbital_rotation: bool
     optimization_method: str
     maxiter: int
@@ -87,13 +88,14 @@ def run_lucj_task(
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
     alpha_alpha_indices, alpha_beta_indices = _get_lucj_indices(task.connectivity, norb)
+    n_reps = None
 
     def fun(x: np.ndarray) -> float:
         # Initialize the ansatz operator from the parameter vector
         operator = ffsim.UCJOperator.from_parameters(
             x,
             norb=norb,
-            n_reps=task.n_reps,
+            n_reps=n_reps,
             alpha_alpha_indices=alpha_alpha_indices,
             alpha_beta_indices=alpha_beta_indices,
             with_final_orbital_rotation=task.with_final_orbital_rotation,
@@ -117,7 +119,7 @@ def run_lucj_task(
         operator = ffsim.UCJOperator.from_parameters(
             x,
             norb=norb,
-            n_reps=task.n_reps,
+            n_reps=n_reps,
             alpha_alpha_indices=alpha_alpha_indices,
             alpha_beta_indices=alpha_beta_indices,
             with_final_orbital_rotation=task.with_final_orbital_rotation,
@@ -127,16 +129,18 @@ def run_lucj_task(
     # generate initial parameters
     if task.bootstrap_task is None:
         # use CCSD to initialize parameters
-        params = ffsim.UCJOperator.from_t_amplitudes(
+        op = ffsim.UCJOperator.from_t_amplitudes(
             mol_data.ccsd_t2,
             n_reps=task.n_reps,
             t1_amplitudes=mol_data.ccsd_t1
             if task.with_final_orbital_rotation
             else None,
-        ).to_parameters(
+        )
+        params = op.to_parameters(
             alpha_alpha_indices=alpha_alpha_indices,
             alpha_beta_indices=alpha_beta_indices,
         )
+        n_reps = op.n_reps
     else:
         bootstrap_result_filename = os.path.join(
             data_dir, task.bootstrap_task.dirname, "result.pickle"
@@ -144,6 +148,8 @@ def run_lucj_task(
         with open(bootstrap_result_filename, "rb") as f:
             result = pickle.load(f)
             params = result.x
+            # TODO this isn't right
+            n_reps = task.n_reps
 
     # optimize ansatz
     logging.info(f"{task} Optimizing ansatz...\n")
@@ -207,6 +213,8 @@ def run_lucj_task(
                 ),
             ),
         )
+    elif task.optimization_method == "none":
+        result = OptimizeResult(x=params, success=True, fun=fun(params), nfev=1, nit=0)
     else:
         raise NotImplementedError
     t1 = timeit.default_timer()
@@ -259,10 +267,20 @@ def process_result(
 
     alpha_alpha_indices, alpha_beta_indices = _get_lucj_indices(task.connectivity, norb)
 
+    if task.n_reps is None:
+        op = ffsim.UCJOperator.from_t_amplitudes(
+            mol_data.ccsd_t2,
+            t1_amplitudes=mol_data.ccsd_t1
+            if task.with_final_orbital_rotation
+            else None,
+        )
+        n_reps = op.n_reps
+    else:
+        n_reps = task.n_reps
     operator = ffsim.UCJOperator.from_parameters(
         result.x,
         norb=norb,
-        n_reps=task.n_reps,
+        n_reps=n_reps,
         alpha_alpha_indices=alpha_alpha_indices,
         alpha_beta_indices=alpha_beta_indices,
         with_final_orbital_rotation=task.with_final_orbital_rotation,

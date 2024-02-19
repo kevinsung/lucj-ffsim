@@ -10,8 +10,8 @@ DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 BASIS = "sto-6g"
-NE, NORB = 10, 8
-BASE_NAME = f"nitrogen_dissociation_{BASIS}_{NE}e{NORB}o"
+NE, NORB = 8, 8
+BASE_NAME = f"c2_dissociation_{BASIS}_{NE}e{NORB}o"
 
 
 def transport(t1, t2, mf_old, mf_new, mo_new=None):
@@ -105,7 +105,7 @@ for idx_calc, d in enumerate(dl):
     calc = {"R": d}
 
     mol = pyscf.gto.Mole()
-    mol.atom = [["N", (-d / 2.0, 0, 0)], ["N", (d / 2.0, 0, 0)]]
+    mol.atom = [["C", (-d / 2.0, 0, 0)], ["C", (d / 2.0, 0, 0)]]
     mol.basis = BASIS
     mol.charge = 0
     mol.spin = 0
@@ -116,7 +116,7 @@ for idx_calc, d in enumerate(dl):
 
     # Hartree Fock
     mf = pyscf.scf.RHF(mol)
-    mf.irrep_nelec = {"A1g": 6, "A1u": 4, "E1ux": 2, "E1uy": 2}
+    mf.irrep_nelec = {"A1g": 4, "A1u": 4, "E1ux": 2, "E1uy": 2}
     mf.kernel(rho)
     for f in range(3):
         mo1 = mf.stability()[0]
@@ -170,7 +170,7 @@ for idx_calc, d in enumerate(dl):
     cas.fix_spin_(ss=0)
     cas.kernel(mo_coeff=orb, ci0=ci0)
     cas.mo_coeff = orb
-    ci0 = cas.ci
+    # ci0   = cas.ci
     e_cas = cas.e_tot
     s_cas = cas.fcisolver.spin_square(cas.ci, norb=cas.ncas, nelec=cas.nelecas)[0]
     calc["E_casci"] = e_cas
