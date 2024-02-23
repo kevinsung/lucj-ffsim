@@ -7,8 +7,10 @@ import numpy as np
 import pandas as pd
 from lucj_ffsim.lucj import LUCJTask
 from lucj_ffsim.plot import (
-    plot_reference_curves,
+    plot_n_reps,
     plot_optimization_method,
+    plot_overlap_mats,
+    plot_reference_curves,
 )
 
 DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
@@ -30,17 +32,17 @@ connectivities = [
     "all-to-all",
 ]
 n_reps_range = [
-    None,
+    # None,
     2,
-    # 4,
-    # 6,
+    4,
+    6,
+]
+optimization_methods = [
+    "none",
+    "L-BFGS-B",
+    "linear-method",
 ]
 with_final_orbital_rotation_choices = [False]
-optimization_methods = [
-    "none"
-    # "L-BFGS-B",
-    # "linear-method",
-]
 maxiter = 1000
 
 ansatz_settings = list(
@@ -181,13 +183,30 @@ for connectivity, n_reps in itertools.product(connectivities, n_reps_range):
         connectivity=connectivity,
         n_reps=n_reps,
     )
-    # plot_overlap_mats(
-    #     plots_dir=PLOTS_DIR,
-    #     title="Nitrogen dissociation STO-6g (10e, 8o) overlap matrix" + f", L={n_reps}",
-    #     infos=infos,
-    #     molecule_basename=molecule_basename,
-    #     bond_distance_range=d_range,
-    #     n_pts=n_pts,
-    #     connectivity=connectivity,
-    #     n_reps=n_reps,
-    # )
+    plot_overlap_mats(
+        plots_dir=PLOTS_DIR,
+        title="Nitrogen dissociation STO-6g (10e, 8o) overlap matrix" + f", L={n_reps}",
+        infos=infos,
+        molecule_basename=molecule_basename,
+        bond_distance_range=d_range,
+        n_pts=n_pts,
+        connectivity=connectivity,
+        n_reps=n_reps,
+    )
+for connectivity, optimization_method in itertools.product(
+    connectivities, optimization_methods
+):
+    plot_n_reps(
+        plots_dir=PLOTS_DIR,
+        title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+        data=data,
+        molecule_basename=molecule_basename,
+        reference_curves_bond_distance_range=reference_curves_d_range,
+        hf_energies_reference=hf_energies_reference,
+        fci_energies_reference=fci_energies_reference,
+        bond_distance_range=d_range,
+        n_pts=n_pts,
+        optimization_method=optimization_method,
+        connectivity=connectivity,
+        n_reps_range=n_reps_range,
+    )

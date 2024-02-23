@@ -121,6 +121,7 @@ def plot_reference_curves(
     os.makedirs(dirname, exist_ok=True)
     filename = os.path.join(dirname, "reference_curves.svg")
     plt.savefig(filename)
+    plt.close()
 
 
 def plot_optimization_method(
@@ -235,7 +236,123 @@ def plot_optimization_method(
     # os.makedirs(dirname, exist_ok=True)
     # filename = os.path.join(dirname, f"{connectivity}.svg")
     # plt.savefig(filename)
-    # plt.close()
+
+    plt.close()
+
+
+def plot_n_reps(
+    plots_dir: str,
+    title: str,
+    data: pd.DataFrame,
+    molecule_basename: str,
+    reference_curves_bond_distance_range: np.ndarray,
+    hf_energies_reference: np.ndarray,
+    fci_energies_reference: np.ndarray,
+    bond_distance_range: np.ndarray,
+    n_pts: int,
+    optimization_method: str,
+    connectivity: str,
+    n_reps_range: list[int],
+):
+    # effect of number of circuit repetitions
+    markers = ["o", "s", "v", "D", "p", "*"]
+
+    this_data = {}
+    for n_reps in n_reps_range:
+        settings = {
+            "connectivity": connectivity,
+            "n_reps": n_reps,
+            "with_final_orbital_rotation": False,
+            "optimization_method": optimization_method,
+        }
+        this_data[n_reps] = data.xs(
+            tuple(settings.values()), level=tuple(settings.keys())
+        )
+
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+    fig.subplots_adjust(wspace=0.25)
+
+    ax1.plot(
+        reference_curves_bond_distance_range,
+        hf_energies_reference,
+        "--",
+        label="HF",
+        color="blue",
+    )
+    ax1.plot(
+        reference_curves_bond_distance_range,
+        fci_energies_reference,
+        "-",
+        label="FCI",
+        color="black",
+    )
+    for n_reps, marker in zip(n_reps_range, markers):
+        ax1.plot(
+            bond_distance_range,
+            this_data[n_reps]["energy"].values,
+            f"{marker}--",
+            label=f"LUCJ, L={n_reps}, {optimization_method}",
+        )
+    ax1.legend()
+    ax1.set_ylabel("Energy (Hartree)")
+
+    for n_reps, marker in zip(n_reps_range, markers):
+        ax2.plot(
+            bond_distance_range,
+            this_data[n_reps]["error"].values,
+            f"{marker}--",
+            label=f"LUCJ, L={n_reps}, {n_reps}",
+        )
+    ax2.set_yscale("log")
+    ax2.axhline(1e-3, linestyle="--", color="gray")
+    ax2.legend()
+    ax2.set_ylabel("Energy error (Hartree)")
+
+    for n_reps, marker in zip(n_reps_range, markers):
+        ax3.plot(
+            bond_distance_range,
+            this_data[n_reps]["spin_squared"].values,
+            f"{marker}--",
+            label=f"LUCJ, L={n_reps}, {optimization_method}",
+        )
+    ax3.axhline(0, linestyle="--", color="gray")
+    ax3.legend()
+    ax3.set_ylabel("Spin squared")
+    ax3.set_xlabel("Bond length (Å)")
+
+    for n_reps, marker in zip(n_reps_range, markers):
+        ax4.plot(
+            bond_distance_range,
+            this_data[n_reps]["nit"].values,
+            f"{marker}--",
+            label=f"LUCJ, L={n_reps}, {optimization_method}",
+        )
+    ax4.legend()
+    ax4.set_ylabel("Number of iterations")
+
+    fig.suptitle(title)
+
+    dirname = os.path.join(
+        plots_dir,
+        molecule_basename,
+        f"npts-{n_pts}",
+        connectivity,
+    )
+    os.makedirs(dirname, exist_ok=True)
+    filename = os.path.join(dirname, f"{optimization_method}.svg")
+    plt.savefig(filename)
+
+    # dirname = os.path.join(
+    #     plots_dir,
+    #     molecule_basename,
+    #     f"npts-{n_pts}",
+    #     f"n_reps-{n_reps}",
+    # )
+    # os.makedirs(dirname, exist_ok=True)
+    # filename = os.path.join(dirname, f"{connectivity}.svg")
+    # plt.savefig(filename)
+
+    plt.close()
 
 
 def plot_overlap_mats(

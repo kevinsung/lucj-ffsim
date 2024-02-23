@@ -20,7 +20,7 @@ DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 DATA_DIR = os.path.join(DATA_ROOT, "lucj")
-MAX_PROCESSES = 144
+MAX_PROCESSES = 96
 
 basis = "sto-6g"
 ne, norb = 10, 8
@@ -33,15 +33,15 @@ connectivities = [
     "all-to-all",
 ]
 n_reps_range = [
-    None,
     2,
     4,
     6,
+    # None,
 ]
 optimization_methods = [
-    "none",
+    # "none",
     "L-BFGS-B",
-    "linear-method",
+    # "linear-method",
 ]
 with_final_orbital_rotation_choices = [False]
 maxiter = 1000

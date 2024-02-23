@@ -170,7 +170,7 @@ def run_lucj_task(
             method="L-BFGS-B",
             options=dict(
                 maxiter=task.maxiter,
-                # eps=1e-12
+                maxfun=10_000_000,
             ),
             callback=callback,
         )
