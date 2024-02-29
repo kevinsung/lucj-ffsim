@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import math
 import os
 import pickle
 import timeit
@@ -12,7 +11,6 @@ from dataclasses import dataclass
 import ffsim
 import numpy as np
 import scipy.optimize
-from pyscf.fci import spin_square
 from scipy.optimize import OptimizeResult
 
 
@@ -292,11 +290,8 @@ def process_result(
 
     error = energy - mol_data.fci_energy
 
-    spin_squared, multiplicity = spin_square(
+    spin_squared = ffsim.spin_square(
         final_state, norb=mol_data.norb, nelec=mol_data.nelec
-    )
-    np.testing.assert_allclose(
-        multiplicity, 2 * (math.sqrt(spin_squared + 0.25) - 0.5) + 1
     )
 
     data = {

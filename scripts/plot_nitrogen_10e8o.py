@@ -11,6 +11,9 @@ from lucj_ffsim.plot import (
     plot_optimization_method,
     plot_overlap_mats,
     plot_reference_curves,
+    plot_optimization_iterations,
+    plot_linear_method_hyperparameters,
+    plot_parameters,
 )
 
 DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
@@ -38,7 +41,7 @@ n_reps_range = [
     6,
 ]
 optimization_methods = [
-    "none",
+    # "none",
     "L-BFGS-B",
     "linear-method",
 ]
@@ -88,11 +91,11 @@ fci_energies_experiment = np.array(
 
 data = {}
 infos = {}
+results = {}
 for (
     connectivity,
     n_reps,
     with_final_orbital_rotation,
-    # param_initialization,
     optimization_method,
 ) in ansatz_settings:
     for d in d_range:
@@ -101,7 +104,6 @@ for (
             connectivity=connectivity,
             n_reps=n_reps,
             with_final_orbital_rotation=with_final_orbital_rotation,
-            # param_initialization=param_initialization,
             optimization_method=optimization_method,
             maxiter=maxiter,
             bootstrap_task=None,
@@ -114,7 +116,6 @@ for (
                     connectivity,
                     n_reps,
                     with_final_orbital_rotation,
-                    # param_initialization,
                     optimization_method,
                 )
             ] = pickle.load(f)
@@ -126,7 +127,17 @@ for (
                     connectivity,
                     n_reps,
                     with_final_orbital_rotation,
-                    # param_initialization,
+                    optimization_method,
+                )
+            ] = pickle.load(f)
+        filename = os.path.join(DATA_DIR, task.dirname, "result.pickle")
+        with open(filename, "rb") as f:
+            results[
+                (
+                    d,
+                    connectivity,
+                    n_reps,
+                    with_final_orbital_rotation,
                     optimization_method,
                 )
             ] = pickle.load(f)
@@ -183,6 +194,17 @@ for connectivity, n_reps in itertools.product(connectivities, n_reps_range):
         connectivity=connectivity,
         n_reps=n_reps,
     )
+    plot_optimization_iterations(
+        plots_dir=PLOTS_DIR,
+        title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+        data=data,
+        molecule_basename=molecule_basename,
+        bond_distance_range=d_range,
+        n_pts=n_pts,
+        optimization_methods=optimization_methods,
+        connectivity=connectivity,
+        n_reps=n_reps,
+    )
     plot_overlap_mats(
         plots_dir=PLOTS_DIR,
         title="Nitrogen dissociation STO-6g (10e, 8o) overlap matrix" + f", L={n_reps}",
@@ -210,3 +232,29 @@ for connectivity, optimization_method in itertools.product(
         connectivity=connectivity,
         n_reps_range=n_reps_range,
     )
+
+these_indices = [1, 11, 14, 16, 18, 19]
+these_bond_distances = d_range[these_indices]
+np.testing.assert_allclose(these_bond_distances, [1.0, 2.0, 2.3, 2.5, 2.7, 2.8])
+plot_linear_method_hyperparameters(
+    plots_dir=PLOTS_DIR,
+    title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+    infos=infos,
+    molecule_basename=molecule_basename,
+    bond_distances=these_bond_distances,
+    n_pts=n_pts,
+    connectivity="square",
+    n_reps=6,
+)
+
+plot_parameters(
+    plots_dir=PLOTS_DIR,
+    title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+    results=results,
+    molecule_basename=molecule_basename,
+    bond_distance_range=d_range,
+    n_pts=n_pts,
+    optimization_method="linear-method",
+    connectivity="square",
+    n_reps=6,
+)

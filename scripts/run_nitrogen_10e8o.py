@@ -4,9 +4,9 @@ import itertools
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
-from lucj_ffsim.lucj import LUCJTask, run_lucj_task
 
 import numpy as np
+from lucj_ffsim.lucj import LUCJTask, run_lucj_task
 
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
@@ -33,14 +33,14 @@ connectivities = [
     "all-to-all",
 ]
 n_reps_range = [
-    2,
-    4,
-    6,
-    # None,
+    # 2,
+    # 4,
+    # 6,
+    None,
 ]
 optimization_methods = [
-    # "none",
-    "L-BFGS-B",
+    "none",
+    # "L-BFGS-B",
     # "linear-method",
 ]
 with_final_orbital_rotation_choices = [False]
@@ -79,3 +79,10 @@ with ProcessPoolExecutor(MAX_PROCESSES) as executor:
             mol_data_dir=MOL_DATA_DIR,
             overwrite=overwrite,
         )
+        # future = executor.submit(
+        #     process_result,
+        #     task,
+        #     data_dir=DATA_DIR,
+        #     mol_data_dir=MOL_DATA_DIR,
+        #     overwrite=overwrite,
+        # ).result()
