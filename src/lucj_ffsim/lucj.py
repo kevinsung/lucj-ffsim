@@ -22,11 +22,13 @@ class LUCJTask:
     with_final_orbital_rotation: bool
     optimization_method: str
     maxiter: int
-    bootstrap_task: LUCJTask | None
+    linear_method_regularization: float | None = None
+    linear_method_variation: float | None = None
+    bootstrap_task: LUCJTask | None = None
 
     @property
     def dirname(self) -> str:
-        return os.path.join(
+        dirname_ = os.path.join(
             self.molecule_basename,
             f"{self.connectivity}",
             f"n_reps-{self.n_reps}",
@@ -34,9 +36,19 @@ class LUCJTask:
             f"optimization_method-{self.optimization_method}",
             f"maxiter-{self.maxiter}",
         )
+        if self.linear_method_regularization:
+            dirname_ = os.path.join(
+                dirname_,
+                f"linear_method_regularization-{self.linear_method_regularization}",
+            )
+        if self.linear_method_variation:
+            dirname_ = os.path.join(
+                dirname_, f"linear_method_variation-{self.linear_method_variation}"
+            )
+        return dirname_
 
 
-def _get_lucj_indices(
+def get_lucj_indices(
     connectivity: str, norb: int
 ) -> tuple[list[tuple[int, int]] | None, list[tuple[int, int]] | None]:
     if connectivity == "all-to-all":
@@ -85,7 +97,7 @@ def run_lucj_task(
     hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
-    alpha_alpha_indices, alpha_beta_indices = _get_lucj_indices(task.connectivity, norb)
+    alpha_alpha_indices, alpha_beta_indices = get_lucj_indices(task.connectivity, norb)
     n_reps = None
 
     def fun(x: np.ndarray) -> float:
@@ -146,7 +158,7 @@ def run_lucj_task(
         with open(bootstrap_result_filename, "rb") as f:
             result = pickle.load(f)
             params = result.x
-            # TODO this isn't right
+            # TODO this is incorrect for n_reps = None
             n_reps = task.n_reps
 
     # optimize ansatz
@@ -197,6 +209,10 @@ def run_lucj_task(
             hamiltonian,
             x0=params,
             maxiter=task.maxiter,
+            regularization=task.linear_method_regularization or 0,
+            variation=task.linear_method_variation or 0.5,
+            optimize_hyperparameters=task.linear_method_regularization is None
+            and task.linear_method_variation is None,
             callback=callback,
         )
     elif task.optimization_method == "basinhopping":
@@ -263,7 +279,7 @@ def process_result(
     hamiltonian = ffsim.linear_operator(mol_hamiltonian, norb=norb, nelec=nelec)
     reference_state = ffsim.hartree_fock_state(norb, nelec)
 
-    alpha_alpha_indices, alpha_beta_indices = _get_lucj_indices(task.connectivity, norb)
+    alpha_alpha_indices, alpha_beta_indices = get_lucj_indices(task.connectivity, norb)
 
     if task.n_reps is None:
         op = ffsim.UCJOperator.from_t_amplitudes(

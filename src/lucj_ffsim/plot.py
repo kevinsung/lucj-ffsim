@@ -1,8 +1,11 @@
 import os
-
+import itertools
+import ffsim
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from lucj_ffsim.lucj import get_lucj_indices
 
 
 def plot_optimization_iterations(
@@ -253,6 +256,86 @@ def plot_optimization_method(
     plt.close()
 
 
+def plot_lm_hyperparameter(
+    plots_dir: str,
+    title: str,
+    data: pd.DataFrame,
+    molecule_basename: str,
+    bond_distance_range: np.ndarray,
+    n_pts: int,
+    linear_method_regularizations: list[float],
+    linear_method_variations: list[float],
+    connectivity: str,
+    n_reps: int,
+):
+    # effect of optimization method
+    markers = ["o", "s", "v", "D", "p", "*"]
+
+    this_data = {}
+    for regularization, variation in itertools.product(
+        linear_method_regularizations, linear_method_variations
+    ):
+        settings = {
+            "connectivity": connectivity,
+            "n_reps": n_reps,
+            "optimization_method": "linear-method",
+            "linear_method_regularization": regularization,
+            "linear_method_variation": variation,
+            "with_final_orbital_rotation": False,
+        }
+        this_data[regularization, variation] = data.xs(
+            tuple(settings.values()), level=tuple(settings.keys())
+        )
+
+    fig, axes = plt.subplots(
+        2,
+        len(linear_method_regularizations),
+        figsize=(6 * len(linear_method_regularizations), 12),
+    )
+
+    for ax, regularization in zip(axes[0], linear_method_regularizations):
+        for variation, marker in zip(linear_method_variations, markers):
+            ax.plot(
+                bond_distance_range,
+                this_data[regularization, variation]["error"].values,
+                f"{marker}--",
+                label=f"variation = {variation}",
+            )
+        ax.set_yscale("log")
+        ax.axhline(1e-3, linestyle="--", color="gray")
+        ax.legend()
+        ax.set_ylabel("Energy error (Hartree)")
+        ax.set_title(f"regularization = {regularization}")
+
+    for ax, regularization in zip(axes[1], linear_method_regularizations):
+        for variation, marker in zip(linear_method_variations, markers):
+            ax.plot(
+                bond_distance_range,
+                this_data[regularization, variation]["spin_squared"].values,
+                f"{marker}--",
+                label=f"variation = {variation}",
+            )
+        ax.axhline(0, linestyle="--", color="gray")
+        ax.legend()
+        ax.set_ylabel("Spin squared")
+        ax.set_xlabel("Bond length (Å)")
+        ax.set_title(f"regularization = {regularization}")
+
+    fig.suptitle(title)
+
+    dirname = os.path.join(
+        plots_dir,
+        molecule_basename,
+        f"npts-{n_pts}",
+        connectivity,
+    )
+    os.makedirs(dirname, exist_ok=True)
+    filename = os.path.join(dirname, f"lm_hyperparameter_n_reps-{n_reps}.svg")
+    plt.savefig(filename)
+
+    plt.close()
+
+
 def plot_n_reps(
     plots_dir: str,
     title: str,
@@ -472,7 +555,7 @@ def plot_linear_method_hyperparameters(
     plt.savefig(filename)
 
 
-def plot_parameters(
+def plot_parameters_distance(
     plots_dir: str,
     title: str,
     results: dict,
@@ -483,25 +566,34 @@ def plot_parameters(
     connectivity: str,
     n_reps: int,
 ):
-    fig, ax = plt.subplots(1, 1)
+    fig, axes = plt.subplots(2, 1, figsize=(8, 12))
 
     result = results[
         bond_distance_range[0], connectivity, n_reps, False, optimization_method
     ]
+    initial_params = result.x
     current_params = result.x
 
-    vals = []
+    distance = []
+    change = []
     for bond_distance in bond_distance_range[1:]:
         result = results[
             bond_distance, connectivity, n_reps, False, optimization_method
         ]
         params = result.x
-        vals.append(np.linalg.norm(params - current_params))
+        distance.append(np.linalg.norm(params - initial_params))
+        change.append(np.linalg.norm(params - current_params))
         current_params = params
 
-    ax.plot(bond_distance_range[1:], vals, "o--")
-    ax.set_yscale("log")
-    ax.set_title("|x_t - x_{t-1}|")
+    ax0, ax1 = axes
+    ax0.plot(bond_distance_range[1:], change, "o--")
+    ax0.set_xticks(bond_distance_range[1:])
+    ax0.set_yscale("log")
+    ax0.set_title(r"$|x_t - x_{t-1}|$")
+    ax1.plot(bond_distance_range[1:], distance, "o--")
+    ax1.set_xticks(bond_distance_range[1:])
+    ax1.set_yscale("log")
+    ax1.set_title(r"$|x_t - x_0|$")
     fig.suptitle(title)
 
     dirname = os.path.join(
@@ -513,3 +605,119 @@ def plot_parameters(
     os.makedirs(dirname, exist_ok=True)
     filename = os.path.join(dirname, f"parameters_n_reps-{n_reps}.svg")
     plt.savefig(filename)
+
+
+def plot_initial_parameters_distance(
+    plots_dir: str,
+    title: str,
+    molecule_basename: str,
+    mol_datas: dict[float, ffsim.MolecularData],
+    bond_distance_range: np.ndarray,
+    n_pts: int,
+    connectivity: str,
+    n_reps: int,
+    with_final_orbital_rotation: bool,
+):
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+
+    alpha_alpha_indices, alpha_beta_indices = get_lucj_indices(
+        connectivity, next(iter(mol_datas.values())).norb
+    )
+
+    all_params = []
+    for bond_distance in bond_distance_range:
+        mol_data = mol_datas[bond_distance]
+        op = ffsim.UCJOperator.from_t_amplitudes(
+            mol_data.ccsd_t2,
+            n_reps=n_reps,
+            t1_amplitudes=mol_data.ccsd_t1 if with_final_orbital_rotation else None,
+        )
+        params = op.to_parameters(
+            alpha_alpha_indices=alpha_alpha_indices,
+            alpha_beta_indices=alpha_beta_indices,
+        )
+        all_params.append(params)
+
+    current_params = all_params[0]
+
+    change = []
+    for params in all_params[1:]:
+        change.append(np.linalg.norm(params - current_params))
+        current_params = params
+
+    ax.plot(bond_distance_range[1:], change, "o--")
+    ax.set_xticks(bond_distance_range[1:])
+    ax.set_yscale("log")
+    ax.set_title(r"$|x_t - x_{t-1}|$")
+    fig.suptitle(title)
+
+    dirname = os.path.join(
+        plots_dir,
+        molecule_basename,
+        f"npts-{n_pts}",
+        connectivity,
+    )
+    os.makedirs(dirname, exist_ok=True)
+    filename = os.path.join(dirname, f"initial_parameters_n_reps-{n_reps}.svg")
+    plt.savefig(filename)
+
+
+# def plot_parameters(
+#     plots_dir: str,
+#     title: str,
+#     infos: dict,
+#     molecule_basename: str,
+#     bond_distances: np.ndarray,
+#     n_pts: int,
+#     connectivity: str,
+#     n_reps: int,
+# ):
+#     n_plots = 5
+
+#     fig, axes = plt.subplots(
+#         len(bond_distances), n_plots, figsize=(6 * n_plots, 6 * len(bond_distances))
+#     )
+
+#     for these_axes, bond_distance in zip(axes, bond_distances):
+#         info = infos[
+#             bond_distance,
+#             connectivity,
+#             n_reps,
+#             False,
+#             "linear-method",
+#         ]
+
+#         xs = info["x"]
+#         nit = len(xs)
+#         step = nit // (n_plots - 1)
+#         indices = list(range(0, nit, step))
+#         while len(indices) > n_plots - 1:
+#             indices.pop()
+#         if nit - 1 not in indices:
+#             indices.append(nit - 1)
+#         these_xs = [xs[i] for i in indices]
+
+#         for ax, mat, i in zip(these_axes, these_xs, indices):
+#             max_val = np.max(np.abs(mat))
+#             im = ax.matshow(
+#                 mat,
+#                 cmap="bwr",
+#                 vmin=-max_val,
+#                 vmax=max_val,
+#             )
+#             ax.set_title(f"Iteration {i}")
+#             if i == 0:
+#                 ax.set_ylabel(f"d = {bond_distance}")
+#             fig.colorbar(im)
+
+#         fig.suptitle(title)
+
+#     dirname = os.path.join(
+#         plots_dir,
+#         molecule_basename,
+#         f"npts-{n_pts}",
+#         connectivity,
+#     )
+#     os.makedirs(dirname, exist_ok=True)
+#     filename = os.path.join(dirname, f"overlap_mat_n_reps-{n_reps}.svg")
+#     plt.savefig(filename)
