@@ -49,14 +49,14 @@ optimization_methods = [
 ]
 linear_method_regularizations = [
     None,
-    # 0.0,
-    # 1.0,
-    # 10.0,
+    0.0,
+    1.0,
+    10.0,
 ]
 linear_method_variations = [
     None,
-    # 0.0,
-    # 1.0,
+    0.0,
+    1.0,
 ]
 with_final_orbital_rotation_choices = [False]
 maxiter = 1000
@@ -71,6 +71,27 @@ ansatz_settings = list(
         with_final_orbital_rotation_choices,
     )
 )
+# for (
+#     connectivity,
+#     n_reps,
+#     optimization_method,
+#     with_final_orbital_rotation,
+# ) in itertools.product(
+#     connectivities,
+#     n_reps_range,
+#     optimization_methods,
+#     with_final_orbital_rotation_choices,
+# ):
+#     ansatz_settings.append(
+#         (
+#             connectivity,
+#             n_reps,
+#             optimization_method,
+#             None,
+#             None,
+#             with_final_orbital_rotation,
+#         )
+#     )
 n_pts = len(d_range)
 
 mol_datas_reference: dict[float, ffsim.MolecularData] = {}
@@ -196,16 +217,23 @@ data.set_index(
 data.drop(columns="key", inplace=True)  # Drop the original 'Key' column
 
 
-for connectivity, n_reps in itertools.product(connectivities, n_reps_range):
-    plot_lm_hyperparameter(
-        plots_dir=PLOTS_DIR,
-        title="Nitrogen dissociation STO-6g (10e, 8o) overlap matrix" + f", L={n_reps}",
-        data=data,
-        molecule_basename=molecule_basename,
-        bond_distance_range=d_range,
-        n_pts=n_pts,
-        linear_method_regularizations=linear_method_regularizations,
-        linear_method_variations=linear_method_variations,
-        connectivity=connectivity,
-        n_reps=n_reps,
+for connectivity in connectivities:
+    plots_dir = os.path.join(
+        PLOTS_DIR,
+        molecule_basename,
+        f"npts-{n_pts}",
+        connectivity,
     )
+    os.makedirs(plots_dir, exist_ok=True)
+    for n_reps in n_reps_range:
+        plot_lm_hyperparameter(
+            filename=os.path.join(plots_dir, f"lm_hyperparameter_n_reps-{n_reps}.svg"),
+            title="Nitrogen dissociation STO-6g (10e, 8o) overlap matrix"
+            + f", L={n_reps}",
+            data=data,
+            bond_distance_range=d_range,
+            linear_method_regularizations=linear_method_regularizations,
+            linear_method_variations=linear_method_variations,
+            connectivity=connectivity,
+            n_reps=n_reps,
+        )

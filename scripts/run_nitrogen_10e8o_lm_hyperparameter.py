@@ -25,7 +25,7 @@ MAX_PROCESSES = 96
 basis = "sto-6g"
 ne, norb = 10, 8
 molecule_basename = f"nitrogen_dissociation_{basis}_{ne}e{norb}o"
-overwrite = True
+overwrite = False
 
 d_range = np.arange(0.90, 3.01, 0.10)
 connectivities = [
@@ -44,13 +44,13 @@ optimization_methods = [
     "linear-method",
 ]
 linear_method_regularizations = [
-    # None,
+    None,
     0.0,
     1.0,
     10.0,
 ]
 linear_method_variations = [
-    # None,
+    None,
     0.0,
     0.5,
     1.0,

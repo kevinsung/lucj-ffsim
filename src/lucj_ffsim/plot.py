@@ -230,12 +230,10 @@ def plot_optimization_method(
 
 
 def plot_lm_hyperparameter(
-    plots_dir: str,
+    filename: str,
     title: str,
     data: pd.DataFrame,
-    molecule_basename: str,
     bond_distance_range: np.ndarray,
-    n_pts: int,
     linear_method_regularizations: list[float],
     linear_method_variations: list[float],
     connectivity: str,
@@ -296,14 +294,6 @@ def plot_lm_hyperparameter(
 
     fig.suptitle(title)
 
-    dirname = os.path.join(
-        plots_dir,
-        molecule_basename,
-        f"npts-{n_pts}",
-        connectivity,
-    )
-    os.makedirs(dirname, exist_ok=True)
-    filename = os.path.join(dirname, f"lm_hyperparameter_n_reps-{n_reps}.svg")
     plt.savefig(filename)
 
     plt.close()
