@@ -44,16 +44,16 @@ optimization_methods = [
     "linear-method",
 ]
 linear_method_regularizations = [
-    None,
-    # 0.0,
-    # 1.0,
-    # 10.0,
+    # None,
+    0.0,
+    1.0,
+    10.0,
 ]
 linear_method_variations = [
-    None,
-    # 0.0,
-    # 0.5,
-    # 1.0,
+    # None,
+    0.0,
+    0.5,
+    1.0,
 ]
 with_final_orbital_rotation_choices = [False]
 maxiter = 1000

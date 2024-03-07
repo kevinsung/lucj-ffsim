@@ -36,12 +36,12 @@ class LUCJTask:
             f"optimization_method-{self.optimization_method}",
             f"maxiter-{self.maxiter}",
         )
-        if self.linear_method_regularization:
+        if self.linear_method_regularization is not None:
             dirname_ = os.path.join(
                 dirname_,
                 f"linear_method_regularization-{self.linear_method_regularization}",
             )
-        if self.linear_method_variation:
+        if self.linear_method_variation is not None:
             dirname_ = os.path.join(
                 dirname_, f"linear_method_variation-{self.linear_method_variation}"
             )

@@ -8,20 +8,17 @@ import pandas as pd
 from lucj_ffsim.lucj import LUCJTask
 from lucj_ffsim.plot import (
     plot_n_reps,
+    plot_optimization_iterations,
     plot_optimization_method,
     plot_overlap_mats,
     plot_reference_curves,
-    plot_optimization_iterations,
-    plot_linear_method_hyperparameters,
-    plot_parameters_distance,
-    plot_initial_parameters_distance,
 )
 
 DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 DATA_DIR = os.path.join(DATA_ROOT, "lucj")
-PLOTS_DIR = "plots"
+PLOTS_DIR = "plots/lucj"
 os.makedirs(PLOTS_DIR, exist_ok=True)
 
 
@@ -42,7 +39,7 @@ n_reps_range = [
     6,
 ]
 optimization_methods = [
-    # "none",
+    "none",
     "L-BFGS-B",
     "linear-method",
 ]
@@ -169,105 +166,106 @@ data.set_index(
 )
 data.drop(columns="key", inplace=True)  # Drop the original 'Key' column
 
-
-for connectivity, n_reps in itertools.product(connectivities, n_reps_range):
-    # plot_optimization_iterations(connectivity=connectivity, n_reps=n_reps)
-    plot_reference_curves(
-        plots_dir=PLOTS_DIR,
-        title="Nitrogen dissociation STO-6g (10e, 8o)",
-        molecule_basename=molecule_basename,
-        reference_curves_bond_distance_range=reference_curves_d_range,
-        hf_energies_reference=hf_energies_reference,
-        ccsd_energies_reference=ccsd_energies_reference,
-        fci_energies_reference=fci_energies_reference,
-    )
-    plot_optimization_method(
-        plots_dir=PLOTS_DIR,
-        title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
-        data=data,
-        molecule_basename=molecule_basename,
-        reference_curves_bond_distance_range=reference_curves_d_range,
-        hf_energies_reference=hf_energies_reference,
-        fci_energies_reference=fci_energies_reference,
-        bond_distance_range=d_range,
-        n_pts=n_pts,
-        optimization_methods=optimization_methods,
-        connectivity=connectivity,
-        n_reps=n_reps,
-    )
-    plot_optimization_iterations(
-        plots_dir=PLOTS_DIR,
-        title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
-        data=data,
-        molecule_basename=molecule_basename,
-        bond_distance_range=d_range,
-        n_pts=n_pts,
-        optimization_methods=optimization_methods,
-        connectivity=connectivity,
-        n_reps=n_reps,
-    )
-    plot_overlap_mats(
-        plots_dir=PLOTS_DIR,
-        title="Nitrogen dissociation STO-6g (10e, 8o) overlap matrix" + f", L={n_reps}",
-        infos=infos,
-        molecule_basename=molecule_basename,
-        bond_distance_range=d_range,
-        n_pts=n_pts,
-        connectivity=connectivity,
-        n_reps=n_reps,
-    )
-for connectivity, optimization_method in itertools.product(
-    connectivities, optimization_methods
-):
-    plot_n_reps(
-        plots_dir=PLOTS_DIR,
-        title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
-        data=data,
-        molecule_basename=molecule_basename,
-        reference_curves_bond_distance_range=reference_curves_d_range,
-        hf_energies_reference=hf_energies_reference,
-        fci_energies_reference=fci_energies_reference,
-        bond_distance_range=d_range,
-        n_pts=n_pts,
-        optimization_method=optimization_method,
-        connectivity=connectivity,
-        n_reps_range=n_reps_range,
-    )
-
-these_indices = [1, 11, 14, 16, 18, 19]
-these_bond_distances = d_range[these_indices]
-np.testing.assert_allclose(these_bond_distances, [1.0, 2.0, 2.3, 2.5, 2.7, 2.8])
-plot_linear_method_hyperparameters(
-    plots_dir=PLOTS_DIR,
-    title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
-    infos=infos,
-    molecule_basename=molecule_basename,
-    bond_distances=these_bond_distances,
-    n_pts=n_pts,
-    connectivity="square",
-    n_reps=6,
+plots_dir = os.path.join(PLOTS_DIR, molecule_basename)
+os.makedirs(plots_dir, exist_ok=True)
+plot_reference_curves(
+    filename=os.path.join(plots_dir, "reference_curves.svg"),
+    title="Nitrogen dissociation STO-6g (10e, 8o)",
+    reference_curves_bond_distance_range=reference_curves_d_range,
+    hf_energies_reference=hf_energies_reference,
+    ccsd_energies_reference=ccsd_energies_reference,
+    fci_energies_reference=fci_energies_reference,
 )
 
-plot_parameters_distance(
-    plots_dir=PLOTS_DIR,
-    title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
-    results=results,
-    molecule_basename=molecule_basename,
-    bond_distance_range=d_range,
-    n_pts=n_pts,
-    optimization_method="linear-method",
-    connectivity="square",
-    n_reps=6,
-)
+for connectivity in connectivities:
+    plots_dir = os.path.join(
+        PLOTS_DIR,
+        molecule_basename,
+        f"npts-{n_pts}",
+        connectivity,
+    )
+    os.makedirs(plots_dir, exist_ok=True)
+    for n_reps in n_reps_range:
+        plot_optimization_method(
+            filename=os.path.join(plots_dir, f"n_reps-{n_reps}.svg"),
+            title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+            data=data,
+            reference_curves_bond_distance_range=reference_curves_d_range,
+            hf_energies_reference=hf_energies_reference,
+            fci_energies_reference=fci_energies_reference,
+            bond_distance_range=d_range,
+            optimization_methods=optimization_methods,
+            connectivity=connectivity,
+            n_reps=n_reps,
+        )
+        plot_optimization_iterations(
+            filename=os.path.join(plots_dir, f"n_reps-{n_reps}-iterations.svg"),
+            title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+            data=data,
+            bond_distance_range=d_range,
+            optimization_methods=optimization_methods,
+            connectivity=connectivity,
+            n_reps=n_reps,
+        )
+        plot_overlap_mats(
+            filename=os.path.join(plots_dir, f"overlap_mat_n_reps-{n_reps}.svg"),
+            title="Nitrogen dissociation STO-6g (10e, 8o) overlap matrix"
+            + f", L={n_reps}",
+            infos=infos,
+            bond_distance_range=d_range,
+            connectivity=connectivity,
+            n_reps=n_reps,
+        )
 
-plot_initial_parameters_distance(
-    plots_dir=PLOTS_DIR,
-    title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
-    molecule_basename=molecule_basename,
-    mol_datas=mol_datas_experiment,
-    bond_distance_range=d_range,
-    n_pts=n_pts,
-    connectivity="square",
-    n_reps=6,
-    with_final_orbital_rotation=True,
-)
+    for optimization_method in optimization_methods:
+        plot_n_reps(
+            filename=os.path.join(plots_dir, f"{optimization_method}.svg"),
+            title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+            data=data,
+            reference_curves_bond_distance_range=reference_curves_d_range,
+            hf_energies_reference=hf_energies_reference,
+            fci_energies_reference=fci_energies_reference,
+            bond_distance_range=d_range,
+            optimization_method=optimization_method,
+            connectivity=connectivity,
+            n_reps_range=n_reps_range,
+        )
+
+
+# these_indices = [1, 11, 14, 16, 18, 19]
+# these_bond_distances = d_range[these_indices]
+# np.testing.assert_allclose(these_bond_distances, [1.0, 2.0, 2.3, 2.5, 2.7, 2.8])
+# plot_linear_method_hyperparameters(
+#     plots_dir=PLOTS_DIR,
+#     title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+#     infos=infos,
+#     molecule_basename=molecule_basename,
+#     bond_distances=these_bond_distances,
+#     n_pts=n_pts,
+#     connectivity="square",
+#     n_reps=6,
+# )
+
+# plot_parameters_distance(
+#     plots_dir=PLOTS_DIR,
+#     title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+#     results=results,
+#     molecule_basename=molecule_basename,
+#     bond_distance_range=d_range,
+#     n_pts=n_pts,
+#     optimization_method="linear-method",
+#     connectivity="square",
+#     n_reps=6,
+# )
+
+# plot_initial_parameters_distance(
+#     plots_dir=PLOTS_DIR,
+#     title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+#     molecule_basename=molecule_basename,
+#     mol_datas=mol_datas_experiment,
+#     bond_distance_range=d_range,
+#     n_pts=n_pts,
+#     connectivity="square",
+#     n_reps=6,
+#     with_final_orbital_rotation=True,
+# )

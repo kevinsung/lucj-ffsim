@@ -9,12 +9,10 @@ from lucj_ffsim.lucj import get_lucj_indices
 
 
 def plot_optimization_iterations(
-    plots_dir: str,
+    filename: str,
     title: str,
     data: pd.DataFrame,
-    molecule_basename: str,
     bond_distance_range: np.ndarray,
-    n_pts: int,
     optimization_methods: list[str],
     connectivity: str,
     n_reps: int,
@@ -93,23 +91,14 @@ def plot_optimization_iterations(
 
     fig.suptitle(title)
 
-    dirname = os.path.join(
-        plots_dir,
-        molecule_basename,
-        f"npts-{n_pts}",
-        connectivity,
-    )
-    os.makedirs(dirname, exist_ok=True)
-    filename = os.path.join(dirname, f"n_reps-{n_reps}-iterations.svg")
     plt.savefig(filename)
 
     plt.close()
 
 
 def plot_reference_curves(
-    plots_dir: str,
+    filename: str,
     title: str,
-    molecule_basename: str,
     reference_curves_bond_distance_range: np.ndarray,
     hf_energies_reference: np.ndarray,
     ccsd_energies_reference: np.ndarray,
@@ -141,26 +130,18 @@ def plot_reference_curves(
     ax.legend()
     ax.set_title(title)
 
-    dirname = os.path.join(
-        plots_dir,
-        molecule_basename,
-    )
-    os.makedirs(dirname, exist_ok=True)
-    filename = os.path.join(dirname, "reference_curves.svg")
     plt.savefig(filename)
     plt.close()
 
 
 def plot_optimization_method(
-    plots_dir: str,
+    filename: str,
     title: str,
     data: pd.DataFrame,
-    molecule_basename: str,
     reference_curves_bond_distance_range: np.ndarray,
     hf_energies_reference: np.ndarray,
     fci_energies_reference: np.ndarray,
     bond_distance_range: np.ndarray,
-    n_pts: int,
     optimization_methods: list[str],
     connectivity: str,
     n_reps: int,
@@ -243,14 +224,6 @@ def plot_optimization_method(
 
     fig.suptitle(title)
 
-    dirname = os.path.join(
-        plots_dir,
-        molecule_basename,
-        f"npts-{n_pts}",
-        connectivity,
-    )
-    os.makedirs(dirname, exist_ok=True)
-    filename = os.path.join(dirname, f"n_reps-{n_reps}.svg")
     plt.savefig(filename)
 
     plt.close()
@@ -337,15 +310,13 @@ def plot_lm_hyperparameter(
 
 
 def plot_n_reps(
-    plots_dir: str,
+    filename: str,
     title: str,
     data: pd.DataFrame,
-    molecule_basename: str,
     reference_curves_bond_distance_range: np.ndarray,
     hf_energies_reference: np.ndarray,
     fci_energies_reference: np.ndarray,
     bond_distance_range: np.ndarray,
-    n_pts: int,
     optimization_method: str,
     connectivity: str,
     n_reps_range: list[int],
@@ -428,26 +399,16 @@ def plot_n_reps(
 
     fig.suptitle(title)
 
-    dirname = os.path.join(
-        plots_dir,
-        molecule_basename,
-        f"npts-{n_pts}",
-        connectivity,
-    )
-    os.makedirs(dirname, exist_ok=True)
-    filename = os.path.join(dirname, f"{optimization_method}.svg")
     plt.savefig(filename)
 
     plt.close()
 
 
 def plot_overlap_mats(
-    plots_dir: str,
+    filename: str,
     title: str,
     infos: dict,
-    molecule_basename: str,
     bond_distance_range: np.ndarray,
-    n_pts: int,
     connectivity: str,
     n_reps: int,
 ):
@@ -491,17 +452,11 @@ def plot_overlap_mats(
                 ax.set_ylabel(f"d = {bond_distance}")
             fig.colorbar(im)
 
-        fig.suptitle(title)
+    fig.suptitle(title)
 
-    dirname = os.path.join(
-        plots_dir,
-        molecule_basename,
-        f"npts-{n_pts}",
-        connectivity,
-    )
-    os.makedirs(dirname, exist_ok=True)
-    filename = os.path.join(dirname, f"overlap_mat_n_reps-{n_reps}.svg")
     plt.savefig(filename)
+
+    plt.close()
 
 
 def plot_linear_method_hyperparameters(

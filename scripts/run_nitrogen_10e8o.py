@@ -30,18 +30,18 @@ overwrite = True
 d_range = np.arange(0.90, 3.01, 0.10)
 connectivities = [
     "square",
-    "all-to-all",
+    # "all-to-all",
 ]
 n_reps_range = [
-    # 2,
-    # 4,
-    # 6,
-    None,
+    2,
+    4,
+    6,
+    # None,
 ]
 optimization_methods = [
-    "none",
+    # "none",
     # "L-BFGS-B",
-    # "linear-method",
+    "linear-method",
 ]
 with_final_orbital_rotation_choices = [False]
 maxiter = 1000
