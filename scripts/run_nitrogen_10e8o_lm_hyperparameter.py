@@ -20,12 +20,12 @@ DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 DATA_DIR = os.path.join(DATA_ROOT, "lucj")
-MAX_PROCESSES = 96
+MAX_PROCESSES = 128
 
 basis = "sto-6g"
 ne, norb = 10, 8
 molecule_basename = f"nitrogen_dissociation_{basis}_{ne}e{norb}o"
-overwrite = False
+overwrite = True
 
 d_range = np.arange(0.90, 3.01, 0.10)
 connectivities = [
@@ -44,15 +44,16 @@ optimization_methods = [
     "linear-method",
 ]
 linear_method_regularizations = [
-    None,
     0.0,
+    0.1,
     1.0,
     10.0,
 ]
 linear_method_variations = [
-    None,
     0.0,
+    0.25,
     0.5,
+    0.75,
     1.0,
 ]
 with_final_orbital_rotation_choices = [False]

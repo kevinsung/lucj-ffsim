@@ -243,6 +243,17 @@ def plot_lm_hyperparameter(
     markers = ["o", "s", "v", "D", "p", "*"]
 
     this_data = {}
+    settings = {
+        "connectivity": connectivity,
+        "n_reps": n_reps,
+        "optimization_method": "linear-method",
+        "linear_method_regularization": None,
+        "linear_method_variation": None,
+        "with_final_orbital_rotation": False,
+    }
+    this_data[None, None] = data.xs(
+        tuple(settings.values()), level=tuple(settings.keys())
+    )
     for regularization, variation in itertools.product(
         linear_method_regularizations, linear_method_variations
     ):
@@ -265,7 +276,14 @@ def plot_lm_hyperparameter(
     )
 
     for ax, regularization in zip(axes[0], linear_method_regularizations):
-        for variation, marker in zip(linear_method_variations, markers):
+        ax.plot(
+            bond_distance_range,
+            this_data[None, None]["error"].values,
+            f"{markers[0]}--",
+            color="darkgray",
+            label="opt",
+        )
+        for variation, marker in zip(linear_method_variations, markers[1:]):
             ax.plot(
                 bond_distance_range,
                 this_data[regularization, variation]["error"].values,
@@ -279,7 +297,14 @@ def plot_lm_hyperparameter(
         ax.set_title(f"regularization = {regularization}")
 
     for ax, regularization in zip(axes[1], linear_method_regularizations):
-        for variation, marker in zip(linear_method_variations, markers):
+        ax.plot(
+            bond_distance_range,
+            this_data[None, None]["spin_squared"].values,
+            f"{markers[0]}--",
+            color="darkgray",
+            label="opt",
+        )
+        for variation, marker in zip(linear_method_variations, markers[1:]):
             ax.plot(
                 bond_distance_range,
                 this_data[regularization, variation]["spin_squared"].values,

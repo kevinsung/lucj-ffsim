@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import pickle
+import shutil
 import timeit
 from collections import defaultdict
 from concurrent.futures import Future
@@ -209,8 +210,12 @@ def run_lucj_task(
             hamiltonian,
             x0=params,
             maxiter=task.maxiter,
-            regularization=task.linear_method_regularization or 0,
-            variation=task.linear_method_variation or 0.5,
+            regularization=task.linear_method_regularization
+            if task.linear_method_regularization is not None
+            else 0.0,
+            variation=task.linear_method_variation
+            if task.linear_method_variation is not None
+            else 0.5,
             optimize_hyperparameters=task.linear_method_regularization is None
             and task.linear_method_variation is None,
             callback=callback,
@@ -323,3 +328,11 @@ def process_result(
         data["nlinop"] = None
     with open(out_filename, "wb") as f:
         pickle.dump(data, f)
+
+
+def copy_data(
+    task: LUCJTask, src_data_dir: str, dst_data_dir: str, dirs_exist_ok: bool = False
+):
+    src_dir = os.path.join(src_data_dir, task.dirname)
+    dst_dir = os.path.join(dst_data_dir, task.dirname)
+    shutil.copytree(src_dir, dst_dir, dirs_exist_ok=dirs_exist_ok)

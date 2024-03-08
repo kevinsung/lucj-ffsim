@@ -22,7 +22,7 @@ DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 DATA_DIR = os.path.join(DATA_ROOT, "lucj")
-PLOTS_DIR = "plots"
+PLOTS_DIR = "plots/lucj"
 os.makedirs(PLOTS_DIR, exist_ok=True)
 
 
@@ -48,14 +48,16 @@ optimization_methods = [
     "linear-method",
 ]
 linear_method_regularizations = [
-    None,
+    # None,
     0.0,
+    # 0.1,
     1.0,
     10.0,
 ]
 linear_method_variations = [
-    None,
+    # None,
     0.0,
+    0.5,
     1.0,
 ]
 with_final_orbital_rotation_choices = [False]
@@ -71,27 +73,27 @@ ansatz_settings = list(
         with_final_orbital_rotation_choices,
     )
 )
-# for (
-#     connectivity,
-#     n_reps,
-#     optimization_method,
-#     with_final_orbital_rotation,
-# ) in itertools.product(
-#     connectivities,
-#     n_reps_range,
-#     optimization_methods,
-#     with_final_orbital_rotation_choices,
-# ):
-#     ansatz_settings.append(
-#         (
-#             connectivity,
-#             n_reps,
-#             optimization_method,
-#             None,
-#             None,
-#             with_final_orbital_rotation,
-#         )
-#     )
+for (
+    connectivity,
+    n_reps,
+    optimization_method,
+    with_final_orbital_rotation,
+) in itertools.product(
+    connectivities,
+    n_reps_range,
+    optimization_methods,
+    with_final_orbital_rotation_choices,
+):
+    ansatz_settings.append(
+        (
+            connectivity,
+            n_reps,
+            optimization_method,
+            None,
+            None,
+            with_final_orbital_rotation,
+        )
+    )
 n_pts = len(d_range)
 
 mol_datas_reference: dict[float, ffsim.MolecularData] = {}
