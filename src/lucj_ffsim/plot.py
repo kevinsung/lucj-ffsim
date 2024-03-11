@@ -280,6 +280,127 @@ def plot_optimization_method(
     plt.close()
 
 
+def plot_bootstrap_iteration(
+    filename: str,
+    title: str,
+    data: pd.DataFrame,
+    reference_curves_bond_distance_range: np.ndarray,
+    hf_energies_reference: np.ndarray,
+    fci_energies_reference: np.ndarray,
+    bond_distance_range: np.ndarray,
+    optimization_method: str,
+    with_final_orbital_rotation: bool,
+    bootstrap_iterations: list[int],
+    connectivity: str,
+    n_reps: int,
+):
+    # effect of optimization method
+    markers = ["o", "s", "v", "D", "p", "*"]
+    prop_cycle = plt.rcParams["axes.prop_cycle"]
+    colors = prop_cycle.by_key()["color"]
+    linestyles = ["--", ":"]
+
+    this_data = {}
+    for bootstrap_iteration in bootstrap_iterations:
+        settings = {
+            "connectivity": connectivity,
+            "n_reps": n_reps,
+            "with_final_orbital_rotation": with_final_orbital_rotation,
+            "optimization_method": optimization_method,
+            "bootstrap_iteration": bootstrap_iteration,
+        }
+        this_data[optimization_method, bootstrap_iteration] = data.xs(
+            tuple(settings.values()), level=tuple(settings.keys())
+        )
+
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+    fig.subplots_adjust(wspace=0.25)
+
+    ax1.plot(
+        reference_curves_bond_distance_range,
+        hf_energies_reference,
+        "--",
+        label="HF",
+        color="blue",
+    )
+    ax1.plot(
+        reference_curves_bond_distance_range,
+        fci_energies_reference,
+        "-",
+        label="FCI",
+        color="black",
+    )
+    for bootstrap_iteration, marker, color in zip(
+        bootstrap_iterations, markers, colors
+    ):
+        ax1.plot(
+            bond_distance_range,
+            this_data[optimization_method, bootstrap_iteration]["energy"].values,
+            f"{marker}{linestyles[0]}",
+            color=color,
+            label=f"LUCJ + orb opt, iter {bootstrap_iteration}"
+            if with_final_orbital_rotation
+            else f"LUCJ, iter {bootstrap_iteration}",
+        )
+    ax1.legend()
+    ax1.set_ylabel("Energy (Hartree)")
+
+    for bootstrap_iteration, marker, color in zip(
+        bootstrap_iterations, markers, colors
+    ):
+        ax2.plot(
+            bond_distance_range,
+            this_data[optimization_method, bootstrap_iteration]["error"].values,
+            f"{marker}{linestyles[0]}",
+            color=color,
+            label=f"LUCJ + orb opt, iter {bootstrap_iteration}"
+            if with_final_orbital_rotation
+            else f"LUCJ, iter {bootstrap_iteration}",
+        )
+    ax2.set_yscale("log")
+    ax2.axhline(1e-3, linestyle="--", color="gray")
+    ax2.legend()
+    ax2.set_ylabel("Energy error (Hartree)")
+
+    for bootstrap_iteration, marker, color in zip(
+        bootstrap_iterations, markers, colors
+    ):
+        ax3.plot(
+            bond_distance_range,
+            this_data[optimization_method, bootstrap_iteration]["spin_squared"].values,
+            f"{marker}{linestyles[0]}",
+            color=color,
+            label=f"LUCJ + orb opt, iter {bootstrap_iteration}"
+            if with_final_orbital_rotation
+            else f"LUCJ, iter {bootstrap_iteration}",
+        )
+    ax3.axhline(0, linestyle="--", color="gray")
+    ax3.legend()
+    ax3.set_ylabel("Spin squared")
+    ax3.set_xlabel("Bond length (Å)")
+
+    for bootstrap_iteration, marker, color in zip(
+        bootstrap_iterations, markers, colors
+    ):
+        ax4.plot(
+            bond_distance_range,
+            this_data[optimization_method, bootstrap_iteration]["nit"].values,
+            f"{marker}{linestyles[0]}",
+            color=color,
+            label=f"LUCJ + orb opt, iter {bootstrap_iteration}"
+            if with_final_orbital_rotation
+            else f"LUCJ, iter {bootstrap_iteration}",
+        )
+    ax4.legend()
+    ax4.set_ylabel("Number of iterations")
+
+    fig.suptitle(title)
+
+    plt.savefig(filename)
+
+    plt.close()
+
+
 def plot_lm_hyperparameter(
     filename: str,
     title: str,
