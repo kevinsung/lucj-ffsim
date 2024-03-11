@@ -48,16 +48,16 @@ optimization_methods = [
     "linear-method",
 ]
 linear_method_regularizations = [
-    # None,
     0.0,
-    # 0.1,
+    0.1,
     1.0,
     10.0,
 ]
 linear_method_variations = [
-    # None,
     0.0,
+    0.25,
     0.5,
+    0.75,
     1.0,
 ]
 with_final_orbital_rotation_choices = [False]

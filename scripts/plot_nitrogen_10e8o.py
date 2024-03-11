@@ -30,7 +30,7 @@ reference_curves_d_range = np.arange(0.90, 3.01, 0.05)
 d_range = np.arange(0.90, 3.01, 0.10)
 connectivities = [
     "square",
-    "all-to-all",
+    # "all-to-all",
 ]
 n_reps_range = [
     # None,
@@ -39,11 +39,11 @@ n_reps_range = [
     6,
 ]
 optimization_methods = [
-    "none",
+    # "none",
     "L-BFGS-B",
     "linear-method",
 ]
-with_final_orbital_rotation_choices = [False]
+with_final_orbital_rotation_choices = [False, True]
 maxiter = 1000
 
 ansatz_settings = list(
@@ -195,6 +195,7 @@ for connectivity in connectivities:
             fci_energies_reference=fci_energies_reference,
             bond_distance_range=d_range,
             optimization_methods=optimization_methods,
+            with_final_orbital_rotation_choices=with_final_orbital_rotation_choices,
             connectivity=connectivity,
             n_reps=n_reps,
         )

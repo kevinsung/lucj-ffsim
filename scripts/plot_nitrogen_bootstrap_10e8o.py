@@ -39,11 +39,11 @@ n_reps_range = [
     6,
 ]
 optimization_methods = [
-    "none",
+    # "none",
     "L-BFGS-B",
     "linear-method",
 ]
-with_final_orbital_rotation_choices = [False]
+with_final_orbital_rotation_choices = [False, True]
 maxiter = 1000
 
 ansatz_settings = list(
@@ -188,19 +188,20 @@ for connectivity in connectivities:
     for n_reps in n_reps_range:
         plot_optimization_method(
             filename=os.path.join(plots_dir, f"n_reps-{n_reps}.svg"),
-            title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+            title=f"Nitrogen dissociation STO-6g (10e, 8o), {connectivity}, L={n_reps}",
             data=data,
             reference_curves_bond_distance_range=reference_curves_d_range,
             hf_energies_reference=hf_energies_reference,
             fci_energies_reference=fci_energies_reference,
             bond_distance_range=d_range,
             optimization_methods=optimization_methods,
+            with_final_orbital_rotation_choices=with_final_orbital_rotation_choices,
             connectivity=connectivity,
             n_reps=n_reps,
         )
         plot_optimization_iterations(
             filename=os.path.join(plots_dir, f"n_reps-{n_reps}-iterations.svg"),
-            title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+            title=f"Nitrogen dissociation STO-6g (10e, 8o), {connectivity}, L={n_reps}",
             data=data,
             bond_distance_range=d_range,
             optimization_methods=optimization_methods,
@@ -209,8 +210,7 @@ for connectivity in connectivities:
         )
         plot_overlap_mats(
             filename=os.path.join(plots_dir, f"overlap_mat_n_reps-{n_reps}.svg"),
-            title="Nitrogen dissociation STO-6g (10e, 8o) overlap matrix"
-            + f", L={n_reps}",
+            title=f"Nitrogen dissociation STO-6g (10e, 8o), {connectivity}, L={n_reps}",
             infos=infos,
             bond_distance_range=d_range,
             connectivity=connectivity,
@@ -220,7 +220,7 @@ for connectivity in connectivities:
     for optimization_method in optimization_methods:
         plot_n_reps(
             filename=os.path.join(plots_dir, f"{optimization_method}.svg"),
-            title="Nitrogen dissociation STO-6g (10e, 8o)" + f", {connectivity}",
+            title=f"Nitrogen dissociation STO-6g (10e, 8o), {connectivity}, {optimization_method}",
             data=data,
             reference_curves_bond_distance_range=reference_curves_d_range,
             hf_energies_reference=hf_energies_reference,

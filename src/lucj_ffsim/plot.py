@@ -143,21 +143,28 @@ def plot_optimization_method(
     fci_energies_reference: np.ndarray,
     bond_distance_range: np.ndarray,
     optimization_methods: list[str],
+    with_final_orbital_rotation_choices: list[bool],
     connectivity: str,
     n_reps: int,
 ):
     # effect of optimization method
     markers = ["o", "s", "v", "D", "p", "*"]
+    prop_cycle = plt.rcParams["axes.prop_cycle"]
+    colors = prop_cycle.by_key()["color"]
+    alphas = [1.0, 0.5]
+    linestyles = ["--", ":"]
 
     this_data = {}
-    for optimization_method in optimization_methods:
+    for optimization_method, with_final_orbital_rotation in itertools.product(
+        optimization_methods, with_final_orbital_rotation_choices
+    ):
         settings = {
             "connectivity": connectivity,
             "n_reps": n_reps,
-            "with_final_orbital_rotation": False,
+            "with_final_orbital_rotation": with_final_orbital_rotation,
             "optimization_method": optimization_method,
         }
-        this_data[optimization_method] = data.xs(
+        this_data[optimization_method, with_final_orbital_rotation] = data.xs(
             tuple(settings.values()), level=tuple(settings.keys())
         )
 
@@ -178,47 +185,91 @@ def plot_optimization_method(
         label="FCI",
         color="black",
     )
-    for optimization_method, marker in zip(optimization_methods, markers):
-        ax1.plot(
-            bond_distance_range,
-            this_data[optimization_method]["energy"].values,
-            f"{marker}--",
-            label=f"LUCJ, L={n_reps}, {optimization_method}",
-        )
+    for optimization_method, marker, color in zip(
+        optimization_methods, markers, colors
+    ):
+        for with_final_orbital_rotation, alpha, linestyle in zip(
+            with_final_orbital_rotation_choices, alphas, linestyles
+        ):
+            ax1.plot(
+                bond_distance_range,
+                this_data[optimization_method, with_final_orbital_rotation][
+                    "energy"
+                ].values,
+                f"{marker}{linestyle}",
+                color=color,
+                alpha=alpha,
+                label=f"LUCJ + orb opt, {optimization_method}"
+                if with_final_orbital_rotation
+                else f"LUCJ, {optimization_method}",
+            )
     ax1.legend()
     ax1.set_ylabel("Energy (Hartree)")
 
-    for optimization_method, marker in zip(optimization_methods, markers):
-        ax2.plot(
-            bond_distance_range,
-            this_data[optimization_method]["error"].values,
-            f"{marker}--",
-            label=f"LUCJ, L={n_reps}, {optimization_method}",
-        )
+    for optimization_method, marker, color in zip(
+        optimization_methods, markers, colors
+    ):
+        for with_final_orbital_rotation, alpha, linestyle in zip(
+            with_final_orbital_rotation_choices, alphas, linestyles
+        ):
+            ax2.plot(
+                bond_distance_range,
+                this_data[optimization_method, with_final_orbital_rotation][
+                    "error"
+                ].values,
+                f"{marker}{linestyle}",
+                color=color,
+                alpha=alpha,
+                label=f"LUCJ + orb opt, {optimization_method}"
+                if with_final_orbital_rotation
+                else f"LUCJ, {optimization_method}",
+            )
     ax2.set_yscale("log")
     ax2.axhline(1e-3, linestyle="--", color="gray")
     ax2.legend()
     ax2.set_ylabel("Energy error (Hartree)")
 
-    for optimization_method, marker in zip(optimization_methods, markers):
-        ax3.plot(
-            bond_distance_range,
-            this_data[optimization_method]["spin_squared"].values,
-            f"{marker}--",
-            label=f"LUCJ, L={n_reps}, {optimization_method}",
-        )
+    for optimization_method, marker, color in zip(
+        optimization_methods, markers, colors
+    ):
+        for with_final_orbital_rotation, alpha, linestyle in zip(
+            with_final_orbital_rotation_choices, alphas, linestyles
+        ):
+            ax3.plot(
+                bond_distance_range,
+                this_data[optimization_method, with_final_orbital_rotation][
+                    "spin_squared"
+                ].values,
+                f"{marker}{linestyle}",
+                color=color,
+                alpha=alpha,
+                label=f"LUCJ + orb opt, {optimization_method}"
+                if with_final_orbital_rotation
+                else f"LUCJ, {optimization_method}",
+            )
     ax3.axhline(0, linestyle="--", color="gray")
     ax3.legend()
     ax3.set_ylabel("Spin squared")
     ax3.set_xlabel("Bond length (Å)")
 
-    for optimization_method, marker in zip(optimization_methods, markers):
-        ax4.plot(
-            bond_distance_range,
-            this_data[optimization_method]["nit"].values,
-            f"{marker}--",
-            label=f"LUCJ, L={n_reps}, {optimization_method}",
-        )
+    for optimization_method, marker, color in zip(
+        optimization_methods, markers, colors
+    ):
+        for with_final_orbital_rotation, alpha, linestyle in zip(
+            with_final_orbital_rotation_choices, alphas, linestyles
+        ):
+            ax4.plot(
+                bond_distance_range,
+                this_data[optimization_method, with_final_orbital_rotation][
+                    "nit"
+                ].values,
+                f"{marker}{linestyle}",
+                color=color,
+                alpha=alpha,
+                label=f"LUCJ + orb opt, {optimization_method}"
+                if with_final_orbital_rotation
+                else f"LUCJ, {optimization_method}",
+            )
     ax4.legend()
     ax4.set_ylabel("Number of iterations")
 
