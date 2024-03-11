@@ -24,7 +24,7 @@ BOOTSTRAP_DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap")
 MAX_PROCESSES = 96
 
 
-def generate_lucj_tasks_bootstrap(
+def generate_lucj_tasks_bootstrap_backward(
     d_range: np.ndarray,
     molecule_basename: str,
     connectivity: str,
@@ -87,7 +87,7 @@ maxiter = 1000
 
 task_lists = [
     list(
-        generate_lucj_tasks_bootstrap(
+        generate_lucj_tasks_bootstrap_backward(
             d_range=d_range,
             molecule_basename=molecule_basename,
             connectivity=connectivity,
