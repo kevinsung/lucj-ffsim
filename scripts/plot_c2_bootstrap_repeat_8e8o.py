@@ -22,8 +22,8 @@ os.makedirs(PLOTS_DIR, exist_ok=True)
 
 
 basis = "sto-6g"
-ne, norb = 10, 8
-molecule_basename = f"nitrogen_dissociation_{basis}_{ne}e{norb}o"
+ne, norb = 8, 8
+molecule_basename = f"c2_dissociation_{basis}_{ne}e{norb}o"
 
 reference_curves_d_range = np.arange(0.90, 3.01, 0.05)
 d_range = np.arange(0.90, 3.01, 0.10)
@@ -174,7 +174,7 @@ plots_dir = os.path.join(PLOTS_DIR, molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 plot_reference_curves(
     filename=os.path.join(plots_dir, "reference_curves.svg"),
-    title="Nitrogen dissociation STO-6g (10e, 8o)",
+    title="C2 dissociation STO-6g (8e, 8o)",
     reference_curves_bond_distance_range=reference_curves_d_range,
     hf_energies_reference=hf_energies_reference,
     ccsd_energies_reference=ccsd_energies_reference,
@@ -197,7 +197,7 @@ for connectivity in connectivities:
                 plots_dir,
                 f"n_reps-{n_reps}_{optimization_method}_orb_rot-{with_final_orbital_rotation}.svg",
             ),
-            title=f"Nitrogen dissociation STO-6g (10e, 8o), {connectivity}, L={n_reps}, {optimization_method}",
+            title=f"C2 dissociation STO-6g (8e, 8o), {connectivity}, L={n_reps}, {optimization_method}",
             data=data,
             reference_curves_bond_distance_range=reference_curves_d_range,
             hf_energies_reference=hf_energies_reference,

@@ -73,10 +73,10 @@ connectivities = [
 ]
 n_reps_range = [
     # None,
-    2,
-    4,
-    6,
-    # 8,
+    # 2,
+    # 4,
+    # 6,
+    8,
 ]
 optimization_methods = [
     "none",

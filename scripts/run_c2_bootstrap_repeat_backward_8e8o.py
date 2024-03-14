@@ -64,7 +64,7 @@ def generate_lucj_tasks_bootstrap_backward(
 basis = "sto-6g"
 ne, norb = 8, 8
 molecule_basename = f"c2_dissociation_{basis}_{ne}e{norb}o"
-overwrite = True
+overwrite = False
 
 d_range = np.arange(0.90, 3.01, 0.10)
 connectivities = [
@@ -73,10 +73,10 @@ connectivities = [
 ]
 n_reps_range = [
     # None,
-    # 2,
-    # 4,
-    # 6,
-    8,
+    2,
+    4,
+    6,
+    # 8,
 ]
 optimization_methods = [
     "none",
