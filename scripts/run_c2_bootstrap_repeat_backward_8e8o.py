@@ -76,7 +76,9 @@ n_reps_range = [
     2,
     4,
     6,
-    # 8,
+    8,
+    # 10,
+    # 12,
 ]
 optimization_methods = [
     "none",

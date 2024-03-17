@@ -16,7 +16,7 @@ DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap")
 DATA_DIR_0 = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat")
-DATA_DIR_1 = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat-1")
+# DATA_DIR_1 = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat-1")
 PLOTS_DIR = "plots/lucj-bootstrap-repeat"
 os.makedirs(PLOTS_DIR, exist_ok=True)
 
@@ -36,6 +36,7 @@ n_reps_range = [
     2,
     4,
     6,
+    8,
 ]
 optimization_methods = [
     # "none",
@@ -105,7 +106,7 @@ for (
             maxiter=maxiter,
             bootstrap_task=None,
         )
-        for i, data_dir in enumerate([DATA_DIR, DATA_DIR_0, DATA_DIR_1]):
+        for i, data_dir in enumerate([DATA_DIR, DATA_DIR_0]):
             filename = os.path.join(data_dir, task.dirname, "data.pickle")
             with open(filename, "rb") as f:
                 data[
@@ -205,7 +206,7 @@ for connectivity in connectivities:
             bond_distance_range=d_range,
             optimization_method=optimization_method,
             with_final_orbital_rotation=with_final_orbital_rotation,
-            bootstrap_iterations=[0, 1, 2],
+            bootstrap_iterations=[0, 1],
             connectivity=connectivity,
             n_reps=n_reps,
         )

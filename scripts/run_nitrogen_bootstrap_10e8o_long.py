@@ -6,7 +6,7 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
-from lucj_ffsim.lucj import LUCJTask, copy_data, run_lucj_task
+from lucj_ffsim.lucj import LUCJTask, run_lucj_task
 
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
@@ -19,12 +19,11 @@ logging.basicConfig(
 DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
-DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat")
-BOOTSTRAP_DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap")
+DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap")
 MAX_PROCESSES = 64
 
 
-def generate_lucj_tasks_bootstrap_backward(
+def generate_lucj_tasks_bootstrap(
     d_range: np.ndarray,
     molecule_basename: str,
     connectivity: str,
@@ -33,21 +32,8 @@ def generate_lucj_tasks_bootstrap_backward(
     optimization_method: str,
     maxiter: int,
 ):
-    current_task = LUCJTask(
-        molecule_basename=f"{molecule_basename}_d-{d_range[-1]:.2f}",
-        connectivity=connectivity,
-        n_reps=n_reps,
-        with_final_orbital_rotation=with_final_orbital_rotation,
-        optimization_method=optimization_method,
-        maxiter=maxiter,
-    )
-    copy_data(
-        current_task,
-        src_data_dir=BOOTSTRAP_DATA_DIR,
-        dst_data_dir=DATA_DIR,
-        dirs_exist_ok=True,
-    )
-    for d in d_range[-2::-1]:
+    current_task = None
+    for d in d_range:
         task = LUCJTask(
             molecule_basename=f"{molecule_basename}_d-{d:.2f}",
             connectivity=connectivity,
@@ -73,11 +59,11 @@ connectivities = [
 ]
 n_reps_range = [
     # None,
-    2,
-    4,
-    6,
-    # 8,
-    # 10,
+    # 2,
+    # 4,
+    # 6,
+    8,
+    10,
 ]
 optimization_methods = [
     "none",
@@ -89,7 +75,7 @@ maxiter = 1000
 
 task_lists = [
     list(
-        generate_lucj_tasks_bootstrap_backward(
+        generate_lucj_tasks_bootstrap(
             d_range=d_range,
             molecule_basename=molecule_basename,
             connectivity=connectivity,

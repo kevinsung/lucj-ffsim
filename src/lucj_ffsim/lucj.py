@@ -7,7 +7,7 @@ import shutil
 import timeit
 from collections import defaultdict
 from concurrent.futures import Future
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import ffsim
 import numpy as np
@@ -47,6 +47,9 @@ class LUCJTask:
                 dirname_, f"linear_method_variation-{self.linear_method_variation}"
             )
         return dirname_
+
+    def __str__(self):
+        return repr(replace(self, bootstrap_task=None))
 
 
 def get_lucj_indices(

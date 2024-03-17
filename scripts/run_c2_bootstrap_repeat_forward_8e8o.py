@@ -73,17 +73,19 @@ connectivities = [
 ]
 n_reps_range = [
     # None,
-    # 2,
-    # 4,
-    # 6,
+    2,
+    4,
+    6,
     8,
+    # 10,
+    # 12,
 ]
 optimization_methods = [
     "none",
     "L-BFGS-B",
     "linear-method",
 ]
-with_final_orbital_rotation_choices = [False]
+with_final_orbital_rotation_choices = [False, True]
 maxiter = 1000
 
 task_lists = [

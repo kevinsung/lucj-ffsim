@@ -20,7 +20,7 @@ DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap")
-MAX_PROCESSES = 96
+MAX_PROCESSES = 64
 
 
 def generate_lucj_tasks_bootstrap(
@@ -62,6 +62,8 @@ n_reps_range = [
     2,
     4,
     6,
+    # 8,
+    # 10,
 ]
 optimization_methods = [
     "none",
