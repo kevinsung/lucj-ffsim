@@ -173,7 +173,7 @@ def run_lucj_task(
     if task.optimization_method == "L-BFGS-B":
 
         def callback(intermediate_result: scipy.optimize.OptimizeResult):
-            logging.info(f"Task {task} is on iteration {info['nit']}.")
+            logging.info(f"Task {task} is on iteration {info['nit']}.\n")
             info["x"].append(intermediate_result.x)
             info["fun"].append(intermediate_result.fun)
             info["nit"] += 1
@@ -191,7 +191,7 @@ def run_lucj_task(
     elif task.optimization_method == "linear-method":
 
         def callback(intermediate_result: scipy.optimize.OptimizeResult):
-            logging.info(f"Task {task} is on iteration {info['nit']}.")
+            logging.info(f"Task {task} is on iteration {info['nit']}.\n")
             info["x"].append(intermediate_result.x)
             info["fun"].append(intermediate_result.fun)
             if hasattr(intermediate_result, "jac"):
