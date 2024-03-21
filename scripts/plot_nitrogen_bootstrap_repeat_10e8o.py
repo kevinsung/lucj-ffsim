@@ -6,10 +6,7 @@ import ffsim
 import numpy as np
 import pandas as pd
 from lucj_ffsim.lucj import LUCJTask
-from lucj_ffsim.plot import (
-    plot_reference_curves,
-    plot_bootstrap_iteration,
-)
+from lucj_ffsim.plot import plot_reference_curves, plot_bootstrap_iteration, plot_error
 
 DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
@@ -192,10 +189,27 @@ for connectivity in connectivities:
     for n_reps, optimization_method, with_final_orbital_rotation in itertools.product(
         n_reps_range, optimization_methods, with_final_orbital_rotation_choices
     ):
+        plot_error(
+            filename=os.path.join(
+                plots_dir,
+                f"error_n_reps-{n_reps}_{optimization_method}_orb_rot-{with_final_orbital_rotation}.svg",
+            ),
+            title=f"Nitrogen dissociation STO-6g (10e, 8o), {connectivity}, L={n_reps}, {optimization_method}",
+            data=data,
+            reference_curves_bond_distance_range=reference_curves_d_range,
+            hf_energies_reference=hf_energies_reference,
+            fci_energies_reference=fci_energies_reference,
+            bond_distance_range=d_range,
+            optimization_methods=optimization_methods,
+            with_final_orbital_rotation=with_final_orbital_rotation,
+            bootstrap_iterations=[0, 1, 2],
+            connectivity=connectivity,
+            n_reps_range=n_reps_range,
+        )
         plot_bootstrap_iteration(
             filename=os.path.join(
                 plots_dir,
-                f"n_reps-{n_reps}_{optimization_method}_orb_rot-{with_final_orbital_rotation}.svg",
+                f"bootstrap_n_reps-{n_reps}_{optimization_method}_orb_rot-{with_final_orbital_rotation}.svg",
             ),
             title=f"Nitrogen dissociation STO-6g (10e, 8o), {connectivity}, L={n_reps}, {optimization_method}",
             data=data,
