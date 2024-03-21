@@ -13,7 +13,7 @@ DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap")
 DATA_DIR_0 = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat")
-# DATA_DIR_1 = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat-1")
+DATA_DIR_1 = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat-1")
 PLOTS_DIR = "plots/lucj-bootstrap-repeat"
 os.makedirs(PLOTS_DIR, exist_ok=True)
 
@@ -103,7 +103,7 @@ for (
             maxiter=maxiter,
             bootstrap_task=None,
         )
-        for i, data_dir in enumerate([DATA_DIR, DATA_DIR_0]):
+        for i, data_dir in enumerate([DATA_DIR, DATA_DIR_0, DATA_DIR_1]):
             filename = os.path.join(data_dir, task.dirname, "data.pickle")
             with open(filename, "rb") as f:
                 data[
@@ -191,7 +191,7 @@ for connectivity in connectivities:
         plot_error(
             filename=os.path.join(
                 plots_dir,
-                f"error_n_reps-{n_reps}_{optimization_method}_orb_rot-{with_final_orbital_rotation}.svg",
+                f"error_orb_rot-{with_final_orbital_rotation}.svg",
             ),
             title=f"C2 dissociation STO-6g (8e, 8o), {connectivity}, L={n_reps}, {optimization_method}",
             data=data,
@@ -221,7 +221,7 @@ for connectivity in connectivities:
             bond_distance_range=d_range,
             optimization_method=optimization_method,
             with_final_orbital_rotation=with_final_orbital_rotation,
-            bootstrap_iterations=[0, 1],
+            bootstrap_iterations=[0, 1, 2],
             connectivity=connectivity,
             n_reps=n_reps,
         )
