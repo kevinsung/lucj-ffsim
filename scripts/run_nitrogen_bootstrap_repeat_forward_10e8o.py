@@ -19,8 +19,8 @@ logging.basicConfig(
 DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
-DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat-1")
-BOOTSTRAP_DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat")
+DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat-3")
+BOOTSTRAP_DATA_DIR = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat-2")
 MAX_PROCESSES = 64
 
 
