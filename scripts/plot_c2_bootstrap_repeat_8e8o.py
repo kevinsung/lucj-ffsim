@@ -187,9 +187,7 @@ for connectivity in connectivities:
         connectivity,
     )
     os.makedirs(plots_dir, exist_ok=True)
-    for n_reps, optimization_method, with_final_orbital_rotation in itertools.product(
-        n_reps_range, optimization_methods, with_final_orbital_rotation_choices
-    ):
+    for with_final_orbital_rotation in with_final_orbital_rotation_choices:
         plot_error(
             filename=os.path.join(
                 plots_dir,
@@ -207,6 +205,9 @@ for connectivity in connectivities:
             connectivity=connectivity,
             n_reps_range=n_reps_range,
         )
+    for n_reps, optimization_method, with_final_orbital_rotation in itertools.product(
+        n_reps_range, optimization_methods, with_final_orbital_rotation_choices
+    ):
         plot_bootstrap_iteration(
             filename=os.path.join(
                 plots_dir,
