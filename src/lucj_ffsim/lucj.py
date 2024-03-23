@@ -12,6 +12,7 @@ from dataclasses import dataclass, replace
 import ffsim
 import numpy as np
 import scipy.optimize
+from ffsim.variational.util import orbital_rotation_to_parameters
 from scipy.optimize import OptimizeResult
 
 
@@ -76,6 +77,8 @@ def run_lucj_task(
     task: LUCJTask,
     data_dir: str,
     mol_data_dir: str,
+    *,
+    bootstrap_data_dir: str | None = None,
     overwrite: bool = True,
 ) -> LUCJTask:
     logging.info(f"{task} Starting...\n")
@@ -157,13 +160,19 @@ def run_lucj_task(
         n_reps = op.n_reps
     else:
         bootstrap_result_filename = os.path.join(
-            data_dir, task.bootstrap_task.dirname, "result.pickle"
+            bootstrap_data_dir or data_dir, task.bootstrap_task.dirname, "result.pickle"
         )
         with open(bootstrap_result_filename, "rb") as f:
             result = pickle.load(f)
             params = result.x
             # TODO this is incorrect for n_reps = None
             n_reps = task.n_reps
+        if (
+            task.with_final_orbital_rotation
+            and not task.bootstrap_task.with_final_orbital_rotation
+        ):
+            params = np.concatenate([params, np.zeros(norb**2)])
+            params[-(norb**2) :] = orbital_rotation_to_parameters(np.eye(norb))
 
     # optimize ansatz
     logging.info(f"{task} Optimizing ansatz...\n")
