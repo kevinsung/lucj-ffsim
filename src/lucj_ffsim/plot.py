@@ -405,13 +405,71 @@ def plot_error(
     filename: str,
     title: str,
     data: pd.DataFrame,
-    reference_curves_bond_distance_range: np.ndarray,
-    hf_energies_reference: np.ndarray,
-    fci_energies_reference: np.ndarray,
     bond_distance_range: np.ndarray,
     optimization_methods: list[str],
     with_final_orbital_rotation: bool,
-    bootstrap_iterations: list[int],
+    connectivity: str,
+    n_reps_range: list[int],
+    ymin: float | None = None,
+    ymax: float | None = None,
+):
+    # effect of optimization method
+    markers = ["o", "s", "v", "D", "p", "*"]
+    prop_cycle = plt.rcParams["axes.prop_cycle"]
+    colors = prop_cycle.by_key()["color"]
+    alphas = [1.0, 0.5]
+    linestyles = ["--", ":"]
+
+    this_data = {}
+    for n_reps, optimization_method in itertools.product(
+        n_reps_range, optimization_methods
+    ):
+        settings = {
+            "connectivity": connectivity,
+            "n_reps": n_reps,
+            "with_final_orbital_rotation": with_final_orbital_rotation,
+            "optimization_method": optimization_method,
+        }
+        df = data.xs(tuple(settings.values()), level=tuple(settings.keys()))
+        min_energy_indices = df.groupby(level="bond_distance")["energy"].idxmin()
+        this_data[n_reps, optimization_method] = df.loc[min_energy_indices]
+
+    _, ax = plt.subplots()
+
+    for n_reps, color in zip(n_reps_range, colors):
+        for optimization_method, marker, alpha in zip(
+            optimization_methods, markers, alphas
+        ):
+            ax.plot(
+                bond_distance_range,
+                this_data[n_reps, optimization_method]["error"].values,
+                f"{marker}{linestyles[0]}",
+                color=color,
+                alpha=alpha,
+                label=f"{optimization_method}, L={n_reps}",
+            )
+    ax.set_yscale("log")
+    if ymin and ymax:
+        ax.set_ylim(ymin, ymax)
+    ax.axhline(1e-3, linestyle="--", color="gray")
+    ax.legend()
+    ax.set_ylabel("Energy error (Hartree)")
+    ax.set_xlabel("Bond length (Å)")
+
+    ax.set_title(title)
+
+    plt.savefig(filename)
+
+    plt.close()
+
+
+def plot_error_and_iterations(
+    filename: str,
+    title: str,
+    data: pd.DataFrame,
+    bond_distance_range: np.ndarray,
+    optimization_methods: list[str],
+    with_final_orbital_rotation: bool,
     connectivity: str,
     n_reps_range: list[int],
 ):
