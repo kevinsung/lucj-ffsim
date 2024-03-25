@@ -42,7 +42,7 @@ def plot_optimization_iterations(
             label=f"LUCJ, L={n_reps}, {optimization_method}",
         )
     ax1.set_yscale("log")
-    ax1.axhline(1e-3, linestyle="--", color="gray")
+    ax1.axhline(1.6e-3, linestyle="--", color="gray")
     ax1.legend()
     ax1.set_ylabel("Energy error (Hartree)")
 
@@ -225,7 +225,7 @@ def plot_optimization_method(
                 else f"LUCJ, {optimization_method}",
             )
     ax2.set_yscale("log")
-    ax2.axhline(1e-3, linestyle="--", color="gray")
+    ax2.axhline(1.6e-3, linestyle="--", color="gray")
     ax2.legend()
     ax2.set_ylabel("Energy error (Hartree)")
 
@@ -358,7 +358,7 @@ def plot_bootstrap_iteration(
             else f"LUCJ, iter {bootstrap_iteration}",
         )
     ax2.set_yscale("log")
-    ax2.axhline(1e-3, linestyle="--", color="gray")
+    ax2.axhline(1.6e-3, linestyle="--", color="gray")
     ax2.legend()
     ax2.set_ylabel("Energy error (Hartree)")
 
@@ -451,7 +451,7 @@ def plot_error(
     ax.set_yscale("log")
     if ymin and ymax:
         ax.set_ylim(ymin, ymax)
-    ax.axhline(1e-3, linestyle="--", color="gray")
+    ax.axhline(1.6e-3, linestyle="--", color="gray")
     ax.legend()
     ax.set_ylabel("Energy error (Hartree)")
     ax.set_xlabel("Bond length (Å)")
@@ -510,7 +510,7 @@ def plot_error_and_iterations(
                 label=f"{optimization_method}, L={n_reps}",
             )
     ax1.set_yscale("log")
-    ax1.axhline(1e-3, linestyle="--", color="gray")
+    ax1.axhline(1.6e-3, linestyle="--", color="gray")
     ax1.legend()
     ax1.set_ylabel("Energy error (Hartree)")
 
@@ -598,7 +598,7 @@ def plot_lm_hyperparameter(
                 label=f"variation = {variation}",
             )
         ax.set_yscale("log")
-        ax.axhline(1e-3, linestyle="--", color="gray")
+        ax.axhline(1.6e-3, linestyle="--", color="gray")
         ax.legend()
         ax.set_ylabel("Energy error (Hartree)")
         ax.set_title(f"regularization = {regularization}")
@@ -693,7 +693,7 @@ def plot_n_reps(
             label=f"LUCJ, L={n_reps}, {n_reps}",
         )
     ax2.set_yscale("log")
-    ax2.axhline(1e-3, linestyle="--", color="gray")
+    ax2.axhline(1.6e-3, linestyle="--", color="gray")
     ax2.legend()
     ax2.set_ylabel("Energy error (Hartree)")
 
