@@ -4,4 +4,4 @@ Numerical study of the the [LUCJ ansatz](https://pubs.rsc.org/en/content/article
 
 ## Copyright
 
-(C) Copyright IBM 2024.
+© Copyright IBM 2024.
