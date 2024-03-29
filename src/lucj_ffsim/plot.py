@@ -403,7 +403,6 @@ def plot_bootstrap_iteration(
 
 def plot_error(
     filename: str,
-    title: str,
     data: pd.DataFrame,
     bond_distance_range: np.ndarray,
     optimization_methods: list[str],
@@ -412,12 +411,15 @@ def plot_error(
     n_reps_range: list[int],
     ymin: float | None = None,
     ymax: float | None = None,
+    markers: list[str] | None = None,
+    colors: list[str] | None = None,
 ):
-    # effect of optimization method
-    markers = ["o", "s", "v", "D", "p", "*"]
-    prop_cycle = plt.rcParams["axes.prop_cycle"]
-    colors = prop_cycle.by_key()["color"]
-    alphas = [1.0, 0.5]
+    if markers is None:
+        markers = ["o", "s", "v", "D", "p", "*"]
+    if colors is None:
+        prop_cycle = plt.rcParams["axes.prop_cycle"]
+        colors = prop_cycle.by_key()["color"]
+    alphas = [0.5, 1.0]
     linestyles = ["--", ":"]
 
     this_data = {}
@@ -436,10 +438,8 @@ def plot_error(
 
     _, ax = plt.subplots()
 
-    for n_reps, color in zip(n_reps_range, colors):
-        for optimization_method, marker, alpha in zip(
-            optimization_methods, markers, alphas
-        ):
+    for n_reps, marker, color in zip(n_reps_range, markers, colors):
+        for optimization_method, alpha in zip(optimization_methods, alphas):
             ax.plot(
                 bond_distance_range,
                 this_data[n_reps, optimization_method]["error"].values,
@@ -456,7 +456,74 @@ def plot_error(
     ax.set_ylabel("Energy error (Hartree)")
     ax.set_xlabel("Bond length (Å)")
 
-    ax.set_title(title)
+    plt.savefig(filename)
+
+    plt.close()
+
+
+def plot_energy(
+    filename: str,
+    data: pd.DataFrame,
+    reference_curves_bond_distance_range: np.ndarray,
+    hf_energies_reference: np.ndarray,
+    fci_energies_reference: np.ndarray,
+    bond_distance_range: np.ndarray,
+    optimization_method: str,
+    with_final_orbital_rotation: bool,
+    connectivity: str,
+    n_reps_range: list[int],
+    ymin: float | None = None,
+    ymax: float | None = None,
+    markers: list[str] | None = None,
+    colors: list[str] | None = None,
+):
+    if markers is None:
+        markers = ["o", "s", "v", "D", "p", "*"]
+    if colors is None:
+        prop_cycle = plt.rcParams["axes.prop_cycle"]
+        colors = prop_cycle.by_key()["color"]
+
+    this_data = {}
+    for n_reps in n_reps_range:
+        settings = {
+            "connectivity": connectivity,
+            "n_reps": n_reps,
+            "with_final_orbital_rotation": with_final_orbital_rotation,
+            "optimization_method": optimization_method,
+        }
+        df = data.xs(tuple(settings.values()), level=tuple(settings.keys()))
+        min_energy_indices = df.groupby(level="bond_distance")["energy"].idxmin()
+        this_data[n_reps, optimization_method] = df.loc[min_energy_indices]
+
+    _, ax = plt.subplots()
+
+    ax.plot(
+        reference_curves_bond_distance_range,
+        hf_energies_reference,
+        "--",
+        label="HF",
+        color="blue",
+    )
+    ax.plot(
+        reference_curves_bond_distance_range,
+        fci_energies_reference,
+        "-",
+        label="FCI",
+        color="black",
+    )
+    for n_reps, marker, color in zip(n_reps_range, markers, colors):
+        ax.plot(
+            bond_distance_range,
+            this_data[n_reps, optimization_method]["energy"].values,
+            f"{marker}--",
+            color=color,
+            label=f"LUCJ, L={n_reps}",
+        )
+    if ymin and ymax:
+        ax.set_ylim(ymin, ymax)
+    ax.legend(loc="upper left")
+    ax.set_ylabel("Energy (Hartree)")
+    ax.set_xlabel("Bond length (Å)")
 
     plt.savefig(filename)
 

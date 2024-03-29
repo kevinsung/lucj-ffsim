@@ -2,11 +2,17 @@ import itertools
 import os
 import pickle
 
+import matplotlib.pyplot as plt
 import ffsim
 import numpy as np
 import pandas as pd
 from lucj_ffsim.lucj import LUCJTask
-from lucj_ffsim.plot import plot_reference_curves, plot_error, plot_optimization_method
+from lucj_ffsim.plot import (
+    plot_reference_curves,
+    plot_energy,
+    plot_error,
+    plot_optimization_method,
+)
 
 DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
@@ -31,7 +37,7 @@ connectivities = [
 ]
 n_reps_range = [
     # None,
-    # 2,
+    2,
     4,
     6,
 ]
@@ -225,6 +231,9 @@ plot_reference_curves(
     fci_energies_reference=fci_energies_reference,
 )
 
+markers = ["o", "s", "v", "D", "p", "*"]
+prop_cycle = plt.rcParams["axes.prop_cycle"]
+colors = prop_cycle.by_key()["color"]
 for connectivity in connectivities:
     plots_dir = os.path.join(
         PLOTS_DIR,
@@ -248,18 +257,36 @@ for connectivity in connectivities:
             n_reps=n_reps,
         )
     for with_final_orbital_rotation in [False, True]:
+        plot_energy(
+            filename=os.path.join(
+                plots_dir,
+                f"energy_orb_rot-{with_final_orbital_rotation}.svg",
+            ),
+            data=data,
+            reference_curves_bond_distance_range=reference_curves_d_range,
+            hf_energies_reference=hf_energies_reference,
+            fci_energies_reference=fci_energies_reference,
+            bond_distance_range=d_range,
+            optimization_method="linear-method",
+            with_final_orbital_rotation=with_final_orbital_rotation,
+            connectivity=connectivity,
+            n_reps_range=[2, 4, 6],
+            markers=markers[2::-1],
+            colors=colors[2::-1],
+        )
         plot_error(
             filename=os.path.join(
                 plots_dir,
                 f"error_orb_rot-{with_final_orbital_rotation}.svg",
             ),
-            title=f"N2 dissociation STO-6g (10e, 8o), {connectivity}",
             data=data,
             bond_distance_range=d_range,
             optimization_methods=optimization_methods,
             with_final_orbital_rotation=with_final_orbital_rotation,
             connectivity=connectivity,
-            n_reps_range=n_reps_range,
+            n_reps_range=[4, 6],
             ymin=1e-5,
             ymax=1e-2,
+            markers=markers[1::-1],
+            colors=colors[1::-1],
         )
