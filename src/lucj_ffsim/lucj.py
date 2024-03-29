@@ -167,6 +167,15 @@ def run_lucj_task(
             params = result.x
             # TODO this is incorrect for n_reps = None
             n_reps = task.n_reps
+        if task.bootstrap_task.n_reps < task.n_reps:
+            n_params = ffsim.UCJOperator.n_params(
+                norb=norb,
+                n_reps=task.n_reps,
+                alpha_alpha_indices=alpha_alpha_indices,
+                alpha_beta_indices=alpha_beta_indices,
+                with_final_orbital_rotation=task.bootstrap_task.with_final_orbital_rotation,
+            )
+            params = np.concatenate([params, np.zeros(n_params - len(params))])
         if (
             task.with_final_orbital_rotation
             and not task.bootstrap_task.with_final_orbital_rotation
