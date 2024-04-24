@@ -18,16 +18,17 @@ DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
 
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 DATA_DIR = os.path.join(DATA_ROOT, "lucj-orb-opt")
+DATA_DIR_SPECIAL = os.path.join(DATA_ROOT, "lucj-orb-opt-n_reps-bootstrap")
 DATA_DIR_0 = os.path.join(DATA_ROOT, "lucj-bootstrap")
 DATA_DIR_1 = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat")
 DATA_DIR_2 = os.path.join(DATA_ROOT, "lucj-bootstrap-repeat-1")
-PLOTS_DIR = "plots/lucj-orb-rot"
+PLOTS_DIR = "plots/lucj-orb-rot-special"
 os.makedirs(PLOTS_DIR, exist_ok=True)
 
 
 basis = "sto-6g"
-ne, norb = 10, 8
-molecule_basename = f"nitrogen_dissociation_{basis}_{ne}e{norb}o"
+ne, norb = 8, 8
+molecule_basename = f"c2_dissociation_{basis}_{ne}e{norb}o"
 
 reference_curves_d_range = np.arange(0.90, 3.01, 0.05)
 d_range = np.arange(0.90, 3.01, 0.10)
@@ -40,6 +41,7 @@ n_reps_range = [
     2,
     4,
     6,
+    8,
 ]
 optimization_methods = [
     # "none",
@@ -160,7 +162,10 @@ for (
             maxiter=maxiter,
             bootstrap_task=None,
         )
-        filename = os.path.join(DATA_DIR, task.dirname, "data.pickle")
+        data_dir = (
+            DATA_DIR_SPECIAL if optimization_method == "linear-method" else DATA_DIR
+        )
+        filename = os.path.join(data_dir, task.dirname, "data.pickle")
         with open(filename, "rb") as f:
             data[
                 (
@@ -171,7 +176,7 @@ for (
                     optimization_method,
                 )
             ] = pickle.load(f)
-        filename = os.path.join(DATA_DIR, task.dirname, "info.pickle")
+        filename = os.path.join(data_dir, task.dirname, "info.pickle")
         with open(filename, "rb") as f:
             infos[
                 (
@@ -182,7 +187,7 @@ for (
                     optimization_method,
                 )
             ] = pickle.load(f)
-        filename = os.path.join(DATA_DIR, task.dirname, "result.pickle")
+        filename = os.path.join(data_dir, task.dirname, "result.pickle")
         with open(filename, "rb") as f:
             results[
                 (
@@ -223,8 +228,8 @@ data.drop(columns="key", inplace=True)  # Drop the original 'Key' column
 plots_dir = os.path.join(PLOTS_DIR, molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 plot_reference_curves(
-    filename=os.path.join(plots_dir, "reference_curves.pdf"),
-    title="N2 dissociation STO-6g (10e, 8o)",
+    filename=os.path.join(plots_dir, "reference_curves.svg"),
+    title="C2 dissociation STO-6g (8e, 8o)",
     reference_curves_bond_distance_range=reference_curves_d_range,
     hf_energies_reference=hf_energies_reference,
     ccsd_energies_reference=ccsd_energies_reference,
@@ -244,8 +249,8 @@ for connectivity in connectivities:
     os.makedirs(plots_dir, exist_ok=True)
     for n_reps in n_reps_range:
         plot_optimization_method(
-            filename=os.path.join(plots_dir, f"n_reps-{n_reps}.pdf"),
-            title=f"N2 dissociation STO-6g (10e, 8o), {connectivity}, L={n_reps}",
+            filename=os.path.join(plots_dir, f"n_reps-{n_reps}.svg"),
+            title=f"C2 dissociation STO-6g (8e, 8o), {connectivity}, L={n_reps}",
             data=data,
             reference_curves_bond_distance_range=reference_curves_d_range,
             hf_energies_reference=hf_energies_reference,
@@ -260,7 +265,7 @@ for connectivity in connectivities:
         plot_energy(
             filename=os.path.join(
                 plots_dir,
-                f"energy_orb_rot-{with_final_orbital_rotation}.pdf",
+                f"energy_orb_rot-{with_final_orbital_rotation}.svg",
             ),
             data=data,
             reference_curves_bond_distance_range=reference_curves_d_range,
@@ -270,54 +275,35 @@ for connectivity in connectivities:
             optimization_method="linear-method",
             with_final_orbital_rotation=with_final_orbital_rotation,
             connectivity=connectivity,
-            n_reps_range=[2, 4, 6],
-            markers=markers[2::-1],
-            colors=colors[2::-1],
-        )
-        plot_energy(
-            filename=os.path.join(
-                plots_dir,
-                f"energy_no_hf_orb_rot-{with_final_orbital_rotation}.pdf",
-            ),
-            data=data,
-            reference_curves_bond_distance_range=reference_curves_d_range,
-            hf_energies_reference=None,
-            fci_energies_reference=fci_energies_reference,
-            bond_distance_range=d_range,
-            optimization_method="linear-method",
-            with_final_orbital_rotation=with_final_orbital_rotation,
-            connectivity=connectivity,
-            n_reps_range=[2, 4, 6],
-            # ymin=-108.8,
-            # ymax=-108.2,
-            markers=markers[2::-1],
-            colors=colors[2::-1],
+            n_reps_range=[2, 4, 6, 8],
+            markers=markers[3::-1],
+            colors=colors[3::-1],
         )
         plot_error(
             filename=os.path.join(
                 plots_dir,
-                f"error_orb_rot-{with_final_orbital_rotation}.pdf",
+                f"error_orb_rot-{with_final_orbital_rotation}.svg",
             ),
             data=data,
             bond_distance_range=d_range,
             optimization_methods=optimization_methods,
             with_final_orbital_rotation=with_final_orbital_rotation,
             connectivity=connectivity,
-            n_reps_range=[2, 4, 6],
-            markers=markers[2::-1],
-            colors=colors[2::-1],
+            n_reps_range=[2, 4, 6, 8],
+            markers=markers[3::-1],
+            colors=colors[3::-1],
         )
         plot_error(
             filename=os.path.join(
                 plots_dir,
-                f"error_orb_rot_selected-{with_final_orbital_rotation}.pdf",
+                f"error_orb_rot_selected-{with_final_orbital_rotation}.svg",
             ),
             data=data,
             bond_distance_range=d_range,
             optimization_methods=optimization_methods,
             with_final_orbital_rotation=with_final_orbital_rotation,
             connectivity=connectivity,
-            n_reps_range=[4, 6],
+            n_reps_range=[6, 8],
             ymin=1e-5,
             ymax=1e-2,
             markers=markers[1::-1],

@@ -224,7 +224,7 @@ data.drop(columns="key", inplace=True)  # Drop the original 'Key' column
 plots_dir = os.path.join(PLOTS_DIR, molecule_basename)
 os.makedirs(plots_dir, exist_ok=True)
 plot_reference_curves(
-    filename=os.path.join(plots_dir, "reference_curves.svg"),
+    filename=os.path.join(plots_dir, "reference_curves.pdf"),
     title="C2 dissociation STO-6g (8e, 8o)",
     reference_curves_bond_distance_range=reference_curves_d_range,
     hf_energies_reference=hf_energies_reference,
@@ -245,7 +245,7 @@ for connectivity in connectivities:
     os.makedirs(plots_dir, exist_ok=True)
     for n_reps in n_reps_range:
         plot_optimization_method(
-            filename=os.path.join(plots_dir, f"n_reps-{n_reps}.svg"),
+            filename=os.path.join(plots_dir, f"n_reps-{n_reps}.pdf"),
             title=f"C2 dissociation STO-6g (8e, 8o), {connectivity}, L={n_reps}",
             data=data,
             reference_curves_bond_distance_range=reference_curves_d_range,
@@ -261,7 +261,7 @@ for connectivity in connectivities:
         plot_energy(
             filename=os.path.join(
                 plots_dir,
-                f"energy_orb_rot-{with_final_orbital_rotation}.svg",
+                f"energy_orb_rot-{with_final_orbital_rotation}.pdf",
             ),
             data=data,
             reference_curves_bond_distance_range=reference_curves_d_range,
@@ -275,10 +275,41 @@ for connectivity in connectivities:
             markers=markers[3::-1],
             colors=colors[3::-1],
         )
+        plot_energy(
+            filename=os.path.join(
+                plots_dir,
+                f"energy_no_hf_orb_rot-{with_final_orbital_rotation}.pdf",
+            ),
+            data=data,
+            reference_curves_bond_distance_range=reference_curves_d_range,
+            hf_energies_reference=None,
+            fci_energies_reference=fci_energies_reference,
+            bond_distance_range=d_range,
+            optimization_method="linear-method",
+            with_final_orbital_rotation=with_final_orbital_rotation,
+            connectivity=connectivity,
+            n_reps_range=[2, 4, 6, 8],
+            markers=markers[3::-1],
+            colors=colors[3::-1],
+        )
         plot_error(
             filename=os.path.join(
                 plots_dir,
-                f"error_orb_rot-{with_final_orbital_rotation}.svg",
+                f"error_orb_rot-{with_final_orbital_rotation}.pdf",
+            ),
+            data=data,
+            bond_distance_range=d_range,
+            optimization_methods=optimization_methods,
+            with_final_orbital_rotation=with_final_orbital_rotation,
+            connectivity=connectivity,
+            n_reps_range=[2, 4, 6, 8],
+            markers=markers[3::-1],
+            colors=colors[3::-1],
+        )
+        plot_error(
+            filename=os.path.join(
+                plots_dir,
+                f"error_orb_rot_selected-{with_final_orbital_rotation}.pdf",
             ),
             data=data,
             bond_distance_range=d_range,

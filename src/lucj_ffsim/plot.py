@@ -1,5 +1,6 @@
-import os
 import itertools
+import os
+
 import ffsim
 import matplotlib.pyplot as plt
 import numpy as np
@@ -436,8 +437,9 @@ def plot_error(
         min_energy_indices = df.groupby(level="bond_distance")["energy"].idxmin()
         this_data[n_reps, optimization_method] = df.loc[min_energy_indices]
 
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(layout="constrained")
 
+    legend = {"linear-method": "linear method"}
     for n_reps, marker, color in zip(n_reps_range, markers, colors):
         for optimization_method, alpha in zip(optimization_methods, alphas):
             ax.plot(
@@ -446,7 +448,7 @@ def plot_error(
                 f"{marker}{linestyles[0]}",
                 color=color,
                 alpha=alpha,
-                label=f"{optimization_method}, L={n_reps}",
+                label=f"{legend.get(optimization_method, optimization_method)}, L={n_reps}",
             )
     ax.set_yscale("log")
     if ymin and ymax:
@@ -465,7 +467,7 @@ def plot_energy(
     filename: str,
     data: pd.DataFrame,
     reference_curves_bond_distance_range: np.ndarray,
-    hf_energies_reference: np.ndarray,
+    hf_energies_reference: np.ndarray | None,
     fci_energies_reference: np.ndarray,
     bond_distance_range: np.ndarray,
     optimization_method: str,
@@ -495,15 +497,16 @@ def plot_energy(
         min_energy_indices = df.groupby(level="bond_distance")["energy"].idxmin()
         this_data[n_reps, optimization_method] = df.loc[min_energy_indices]
 
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(layout="constrained")
 
-    ax.plot(
-        reference_curves_bond_distance_range,
-        hf_energies_reference,
-        "--",
-        label="HF",
-        color="blue",
-    )
+    if hf_energies_reference is not None:
+        ax.plot(
+            reference_curves_bond_distance_range,
+            hf_energies_reference,
+            "--",
+            label="HF",
+            color="blue",
+        )
     ax.plot(
         reference_curves_bond_distance_range,
         fci_energies_reference,
@@ -521,7 +524,7 @@ def plot_energy(
         )
     if ymin and ymax:
         ax.set_ylim(ymin, ymax)
-    ax.legend(loc="upper left")
+    ax.legend(loc="upper right")
     ax.set_ylabel("Energy (Hartree)")
     ax.set_xlabel("Bond length (Å)")
 
