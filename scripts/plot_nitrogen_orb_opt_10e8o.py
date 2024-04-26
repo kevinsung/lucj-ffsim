@@ -10,7 +10,7 @@ from lucj_ffsim.lucj import LUCJTask
 from lucj_ffsim.plot import (
     plot_energy,
     plot_error,
-    plot_optimization_method,
+    plot_info,
     plot_reference_curves,
 )
 
@@ -110,10 +110,12 @@ for (
         result_data = None
         info = None
         result = None
+        total_nit = 0
         for data_dir in [DATA_DIR_0, DATA_DIR_1, DATA_DIR_2]:
             filename = os.path.join(data_dir, task.dirname, "data.pickle")
             with open(filename, "rb") as f:
                 this_data = pickle.load(f)
+            total_nit += this_data["nit"]
             if this_data["energy"] < min_energy:
                 min_energy = this_data["energy"]
                 result_data = this_data
@@ -123,6 +125,7 @@ for (
                 filename = os.path.join(data_dir, task.dirname, "result.pickle")
                 with open(filename, "rb") as f:
                     result = pickle.load(f)
+        result_data["nit"] = total_nit
         data[
             (
                 d,
@@ -162,6 +165,8 @@ for (
         )
         filename = os.path.join(DATA_DIR, task.dirname, "data.pickle")
         with open(filename, "rb") as f:
+            this_data = pickle.load(f)
+            this_data["nit"] += total_nit
             data[
                 (
                     d,
@@ -170,7 +175,7 @@ for (
                     True,
                     optimization_method,
                 )
-            ] = pickle.load(f)
+            ] = this_data
         filename = os.path.join(DATA_DIR, task.dirname, "info.pickle")
         with open(filename, "rb") as f:
             infos[
@@ -243,18 +248,19 @@ for connectivity in connectivities:
     )
     os.makedirs(plots_dir, exist_ok=True)
     for n_reps in n_reps_range:
-        plot_optimization_method(
-            filename=os.path.join(plots_dir, f"n_reps-{n_reps}.pdf"),
-            title=f"N2 dissociation STO-6g (10e, 8o), {connectivity}, L={n_reps}",
+        plot_info(
+            filename=os.path.join(plots_dir, "info.pdf"),
             data=data,
             reference_curves_bond_distance_range=reference_curves_d_range,
             hf_energies_reference=hf_energies_reference,
             fci_energies_reference=fci_energies_reference,
             bond_distance_range=d_range,
             optimization_methods=optimization_methods,
-            with_final_orbital_rotation_choices=[False, True],
+            with_final_orbital_rotation=True,
             connectivity=connectivity,
-            n_reps=n_reps,
+            n_reps_range=[4, 6],
+            markers=markers[1::-1],
+            colors=colors[1::-1],
         )
     for with_final_orbital_rotation in [False, True]:
         plot_energy(

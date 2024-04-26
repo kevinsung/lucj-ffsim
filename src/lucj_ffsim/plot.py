@@ -281,6 +281,125 @@ def plot_optimization_method(
     plt.close()
 
 
+def plot_info(
+    filename: str,
+    data: pd.DataFrame,
+    reference_curves_bond_distance_range: np.ndarray,
+    hf_energies_reference: np.ndarray,
+    fci_energies_reference: np.ndarray,
+    bond_distance_range: np.ndarray,
+    optimization_methods: list[str],
+    with_final_orbital_rotation: bool,
+    connectivity: str,
+    n_reps_range: list[int],
+    markers: list[str] | None = None,
+    colors: list[str] | None = None,
+):
+    if markers is None:
+        markers = ["o", "s", "v", "D", "p", "*"]
+    if colors is None:
+        prop_cycle = plt.rcParams["axes.prop_cycle"]
+        colors = prop_cycle.by_key()["color"]
+    alphas = [0.5, 1.0]
+    linestyles = ["--", ":"]
+
+    this_data = {}
+    for n_reps, optimization_method in itertools.product(
+        n_reps_range, optimization_methods
+    ):
+        settings = {
+            "connectivity": connectivity,
+            "n_reps": n_reps,
+            "with_final_orbital_rotation": with_final_orbital_rotation,
+            "optimization_method": optimization_method,
+        }
+        df = data.xs(tuple(settings.values()), level=tuple(settings.keys()))
+        min_energy_indices = df.groupby(level="bond_distance")["energy"].idxmin()
+        this_data[n_reps, optimization_method] = df.loc[min_energy_indices]
+
+    _, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
+        2,
+        2,
+        figsize=(12, 9),
+        layout="constrained",
+    )
+
+    ax1.plot(
+        reference_curves_bond_distance_range,
+        fci_energies_reference,
+        "-",
+        label="FCI",
+        color="black",
+    )
+
+    legend = {"linear-method": "linear method"}
+
+    for n_reps, marker, color in zip(n_reps_range, markers, colors):
+        for optimization_method, alpha in zip(optimization_methods, alphas):
+            ax1.plot(
+                bond_distance_range,
+                this_data[n_reps, optimization_method]["energy"].values,
+                f"{marker}{linestyles[0]}",
+                color=color,
+                alpha=alpha,
+                label=f"LUCJ, {legend.get(optimization_method, optimization_method)}, L={n_reps}",
+            )
+    ax1.legend()
+    ax1.set_ylabel("Energy (Hartree)")
+    ax1.set_xlabel("Bond length (Å)")
+
+    for n_reps, marker, color in zip(n_reps_range, markers, colors):
+        for optimization_method, alpha in zip(optimization_methods, alphas):
+            ax2.plot(
+                bond_distance_range,
+                this_data[n_reps, optimization_method]["error"].values,
+                f"{marker}{linestyles[0]}",
+                color=color,
+                alpha=alpha,
+                label=f"LUCJ, {legend.get(optimization_method, optimization_method)}, L={n_reps}",
+            )
+    ax2.set_yscale("log")
+    ax2.set_ylim(1e-5, 1e-2)
+    ax2.axhline(1.6e-3, linestyle="--", color="gray")
+    ax2.legend()
+    ax2.set_ylabel("Energy error (Hartree)")
+    ax2.set_xlabel("Bond length (Å)")
+
+    for n_reps, marker, color in zip(n_reps_range, markers, colors):
+        for optimization_method, alpha in zip(optimization_methods, alphas):
+            ax3.plot(
+                bond_distance_range,
+                this_data[n_reps, optimization_method]["spin_squared"].values,
+                f"{marker}{linestyles[0]}",
+                color=color,
+                alpha=alpha,
+                label=f"LUCJ, {legend.get(optimization_method, optimization_method)}, L={n_reps}",
+            )
+    ax3.set_ylim(0, 1e-1)
+    ax3.legend()
+    ax3.set_ylabel("Spin squared")
+    ax3.set_xlabel("Bond length (Å)")
+
+    for n_reps, marker, color in zip(n_reps_range, markers, colors):
+        for optimization_method, alpha in zip(optimization_methods, alphas):
+            ax4.plot(
+                bond_distance_range,
+                this_data[n_reps, optimization_method]["nit"].values,
+                f"{marker}{linestyles[0]}",
+                color=color,
+                alpha=alpha,
+                label=f"LUCJ, {legend.get(optimization_method, optimization_method)}, L={n_reps}",
+            )
+    # ax4.set_ylim(0, 1000)
+    ax4.legend()
+    ax4.set_ylabel("Number of iterations")
+    ax4.set_xlabel("Bond length (Å)")
+
+    plt.savefig(filename)
+
+    plt.close()
+
+
 def plot_bootstrap_iteration(
     filename: str,
     title: str,

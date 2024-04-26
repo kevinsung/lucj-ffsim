@@ -62,7 +62,7 @@ def get_bootstrap_task(
 basis = "sto-6g"
 ne, norb = 8, 8
 molecule_basename = f"c2_dissociation_{basis}_{ne}e{norb}o"
-overwrite = True
+overwrite = False
 
 d_range = np.arange(0.90, 3.01, 0.10)
 connectivities = [
@@ -75,7 +75,7 @@ n_reps_range = [
     4,
     6,
     8,
-    # 10,
+    10,
 ]
 optimization_methods = [
     "L-BFGS-B",
