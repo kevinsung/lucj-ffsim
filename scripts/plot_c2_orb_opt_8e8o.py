@@ -14,7 +14,8 @@ from lucj_ffsim.plot import (
     plot_reference_curves,
 )
 
-DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
+# DATA_ROOT = "/disk1/kevinsung@ibm.com/lucj-ffsim"
+DATA_ROOT = "data"
 
 MOL_DATA_DIR = os.path.join(DATA_ROOT, "molecular_data")
 DATA_DIR = os.path.join(DATA_ROOT, "lucj-orb-opt")
@@ -90,7 +91,6 @@ fci_energies_experiment = np.array(
 )
 
 data = {}
-infos = {}
 results = {}
 for (
     connectivity,
@@ -120,9 +120,6 @@ for (
             if this_data["energy"] < min_energy:
                 min_energy = this_data["energy"]
                 result_data = this_data
-                filename = os.path.join(data_dir, task.dirname, "info.pickle")
-                with open(filename, "rb") as f:
-                    info = pickle.load(f)
                 filename = os.path.join(data_dir, task.dirname, "result.pickle")
                 with open(filename, "rb") as f:
                     result = pickle.load(f)
@@ -136,15 +133,6 @@ for (
                 optimization_method,
             )
         ] = result_data
-        infos[
-            (
-                d,
-                connectivity,
-                n_reps,
-                False,
-                optimization_method,
-            )
-        ] = info
         results[
             (
                 d,
@@ -177,17 +165,6 @@ for (
                     optimization_method,
                 )
             ] = this_data
-        filename = os.path.join(DATA_DIR, task.dirname, "info.pickle")
-        with open(filename, "rb") as f:
-            infos[
-                (
-                    d,
-                    connectivity,
-                    n_reps,
-                    True,
-                    optimization_method,
-                )
-            ] = pickle.load(f)
         filename = os.path.join(DATA_DIR, task.dirname, "result.pickle")
         with open(filename, "rb") as f:
             results[
