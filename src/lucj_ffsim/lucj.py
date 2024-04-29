@@ -149,9 +149,7 @@ def run_lucj_task(
         op = ffsim.UCJOperator.from_t_amplitudes(
             mol_data.ccsd_t2,
             n_reps=task.n_reps,
-            t1_amplitudes=mol_data.ccsd_t1
-            if task.with_final_orbital_rotation
-            else None,
+            t1=mol_data.ccsd_t1 if task.with_final_orbital_rotation else None,
         )
         params = op.to_parameters(
             alpha_alpha_indices=alpha_alpha_indices,
@@ -239,6 +237,29 @@ def run_lucj_task(
             else 0.5,
             optimize_hyperparameters=task.linear_method_regularization is None
             and task.linear_method_variation is None,
+            callback=callback,
+        )
+    elif task.optimization_method == "stochastic-reconfiguration":
+
+        def callback(intermediate_result: scipy.optimize.OptimizeResult):
+            logging.info(f"Task {task} is on iteration {info['nit']}.\n")
+            info["x"].append(intermediate_result.x)
+            info["fun"].append(intermediate_result.fun)
+            if hasattr(intermediate_result, "jac"):
+                info["jac"].append(intermediate_result.jac)
+            if hasattr(intermediate_result, "variation"):
+                info["variation"].append(intermediate_result.variation)
+            nit = info["nit"]
+            if nit < 20 or nit % 50 == 0:
+                if hasattr(intermediate_result, "overlap_mat"):
+                    info["overlap_mat"].append((nit, intermediate_result.overlap_mat))
+            info["nit"] += 1
+
+        result = ffsim.optimize.minimize_stochastic_reconfiguration(
+            params_to_vec,
+            hamiltonian,
+            x0=params,
+            maxiter=task.maxiter,
             callback=callback,
         )
     elif task.optimization_method == "basinhopping":

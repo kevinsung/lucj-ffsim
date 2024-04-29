@@ -69,8 +69,9 @@ optimization_methods = [
     "none",
     "L-BFGS-B",
     "linear-method",
+    "stochastic-reconfiguration",
 ]
-with_final_orbital_rotation_choices = [False, True]
+with_final_orbital_rotation_choices = [False]
 maxiter = 1000
 
 task_lists = [

@@ -76,6 +76,7 @@ n_reps_range = [
     6,
     8,
     10,
+    12,
 ]
 optimization_methods = [
     "L-BFGS-B",

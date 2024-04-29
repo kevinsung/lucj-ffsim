@@ -42,6 +42,8 @@ n_reps_range = [
     4,
     6,
     8,
+    10,
+    12,
 ]
 optimization_methods = [
     # "none",
@@ -236,9 +238,9 @@ for connectivity in connectivities:
             optimization_methods=optimization_methods,
             with_final_orbital_rotation=True,
             connectivity=connectivity,
-            n_reps_range=[6, 8],
-            markers=markers[1::-1],
-            colors=colors[1::-1],
+            n_reps_range=[8, 10, 12],
+            markers=markers[2::-1],
+            colors=colors[2::-1],
         )
     for with_final_orbital_rotation in [False, True]:
         plot_energy(
@@ -254,9 +256,9 @@ for connectivity in connectivities:
             optimization_method="linear-method",
             with_final_orbital_rotation=with_final_orbital_rotation,
             connectivity=connectivity,
-            n_reps_range=[2, 4, 6, 8],
-            markers=markers[3::-1],
-            colors=colors[3::-1],
+            n_reps_range=[2, 4, 6, 8, 10, 12],
+            markers=markers[5::-1],
+            colors=colors[5::-1],
         )
         plot_energy(
             filename=os.path.join(
@@ -271,9 +273,9 @@ for connectivity in connectivities:
             optimization_method="linear-method",
             with_final_orbital_rotation=with_final_orbital_rotation,
             connectivity=connectivity,
-            n_reps_range=[2, 4, 6, 8],
-            markers=markers[3::-1],
-            colors=colors[3::-1],
+            n_reps_range=[2, 4, 6, 8, 10, 12],
+            markers=markers[5::-1],
+            colors=colors[5::-1],
         )
         plot_error(
             filename=os.path.join(
@@ -285,9 +287,9 @@ for connectivity in connectivities:
             optimization_methods=optimization_methods,
             with_final_orbital_rotation=with_final_orbital_rotation,
             connectivity=connectivity,
-            n_reps_range=[2, 4, 6, 8],
-            markers=markers[3::-1],
-            colors=colors[3::-1],
+            n_reps_range=[2, 4, 6, 8, 10, 12],
+            markers=markers[5::-1],
+            colors=colors[5::-1],
         )
         plot_error(
             filename=os.path.join(
@@ -299,9 +301,9 @@ for connectivity in connectivities:
             optimization_methods=optimization_methods,
             with_final_orbital_rotation=with_final_orbital_rotation,
             connectivity=connectivity,
-            n_reps_range=[6, 8],
+            n_reps_range=[8, 10, 12],
             ymin=1e-5,
             ymax=1e-2,
-            markers=markers[1::-1],
-            colors=colors[1::-1],
+            markers=markers[2::-1],
+            colors=colors[2::-1],
         )
